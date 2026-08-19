@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GameApp from '../components/GameApp.jsx';
+import '../styles/global.css';
+---
+<Layout title="Query Noir — SQL Detective Game">
+  <main class="min-h-screen bg-slate-950 text-slate-100">
+    <GameApp client:load />
+  </main>
+</Layout>
