@@ -37,8 +37,8 @@ Reseed (`seed.js`) tetap drop + recreate progression → state bersih.
 ## Flow API
 
 ### `POST /api/execute`
-Body: `{ episodeId, sql }`. Validasi:
-- `sql` valid & dibolehkan allowlist → eksekusi. Bila `episodeId` valid dan bab berstatus available/solved → `query_count + 1`.
+Body: `{ episodeId, sql }`. `episodeId` **wajib** dari frontend (selalu dikirim). Backend **wajib memvalidasi**: tanpa `episodeId` valid → tetap eksekusi SQL tapi **query_count tidak naik** (lihat Anti-regresi). Aturan:
+- `sql` valid & dibolehkan allowlist → eksekusi. Bila `episodeId` valid **dan** bab berstatus available/solved → `query_count + 1`.
 - SQL error (sintaks / perintah tak diizinkan) → 400; **query_count TIDAK naik** (kesalahan sintaks bukan aktivitas berguna).
 
 ### `POST /api/episodes/:id/start` (baru)
