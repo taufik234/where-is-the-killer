@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, Lock, RotateCcw, Sparkles } from 'lucide-react';
+import { BookOpen, Check, Lock, RotateCcw, Sparkles } from 'lucide-react';
 import { api, type EpisodeDetail, type EpisodeSummary, type QueryResponse, type SolveResponse } from '@/lib/api';
 import SqlEditor from './SqlEditor';
 import ResultTable from './ResultTable';
@@ -168,7 +168,11 @@ export default function GameApp() {
                         <Icon />
                         <span>Bab {ep.id}</span>
                         <SidebarMenuBadge>
-                          {ep.status === 'solved' ? '✓' : ep.status === 'locked' ? '🔒' : ''}
+                          {ep.status === 'solved' ? (
+                            <Check className="size-3.5 text-primary" />
+                          ) : ep.status === 'locked' ? (
+                            <Lock className="size-3.5 text-muted-foreground" />
+                          ) : null}
                         </SidebarMenuBadge>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
