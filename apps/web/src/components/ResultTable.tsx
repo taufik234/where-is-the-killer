@@ -1,3 +1,13 @@
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
 interface ResultTableProps {
   columns: string[];
   rows: Record<string, unknown>[];
@@ -5,34 +15,33 @@ interface ResultTableProps {
 
 export default function ResultTable({ columns, rows }: ResultTableProps) {
   if (columns.length === 0) {
-    return <p className="text-sm text-slate-500">Jalankan query untuk melihat hasil.</p>;
+    return <p className="text-sm text-muted-foreground">Jalankan query untuk melihat hasil.</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-md border border-white/10">
-      <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-surface-2">
-          <tr>
+    <ScrollArea className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
             {columns.map((col) => (
-              <th
-                key={col}
-                className="border-b border-white/10 px-3 py-2 font-mono text-xs font-semibold text-accent">
+              <TableHead key={col} className="font-mono text-[11px] font-semibold uppercase tracking-wider text-primary">
                 {col}
-              </th>
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((row, i) => (
-            <tr key={i} className="odd:bg-surface-0/40 even:bg-surface-1">
+            <TableRow key={i} className="odd:bg-muted/30">
               {columns.map((col) => (
-                <td key={col} className="border-b border-white/5 px-3 py-1.5 font-mono text-xs text-slate-300">
+                <TableCell key={col} className="font-mono text-xs text-foreground/80">
                   {String(row[col] ?? '')}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
   );
 }

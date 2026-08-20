@@ -16,7 +16,7 @@ apps/web        Astro frontend (Fase 3 — belum dibangun)
 | Endpoint | Deskripsi |
 |---|---|
 | `GET /api/health` | Status server + jumlah episode |
-| `GET /api/episodes` | Daftar episode + status (available/locked/solved) |
+| `GET /api/episodes` | Daftar episode + status (available/locked/solved) + `best_score` |
 | `GET /api/episodes/:id` | Detail episode: brief, goal, hints, kolom tabel |
 | `POST /api/execute` | Jalankan query `{ sql }` terhadap evidence DB (read-only, sandox) |
 | `POST /api/solve/:id` | Verifikasi jawaban `{ sql }`; benar → episode solved + unlock berikutnya |

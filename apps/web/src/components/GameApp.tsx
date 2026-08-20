@@ -1,8 +1,34 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type EpisodeDetail, type EpisodeSummary, type QueryResponse, type SolveResponse } from '../lib/api';
+import { BookOpen, Lock, RotateCcw, Sparkles } from 'lucide-react';
+import { api, type EpisodeDetail, type EpisodeSummary, type QueryResponse, type SolveResponse } from '@/lib/api';
 import SqlEditor from './SqlEditor';
 import ResultTable from './ResultTable';
 import StoryPanel from './StoryPanel';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -11,6 +37,8 @@ const STATUS_LABEL = {
   available: 'SIAP DIIKUTI',
   locked: 'TERKUNCI',
 } as const;
+
+const EPISODE_ICONS = [BookOpen, Sparkles, Lock, Lock, Lock];
 
 export default function GameApp() {
   const [episodes, setEpisodes] = useState<EpisodeSummary[] | null>(null);
@@ -21,11 +49,11 @@ export default function GameApp() {
   const [solve, setSolve] = useState<SolveResponse | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [verdictDialogOpen, setVerdictDialogOpen] = useState(false);
 
   const loadEpisode = useCallback(async (id: number) => {
     const detail = await api.episode(id);
     setEpisode(detail);
-    // Mulai attempt baru: reset counter query/wrong (idempoten).
     api.start(id).then(() => {}).catch(() => {});
     if (detail.status === 'solved') {
       api.execute(id, detail.solution!.query).then(setQuery).catch(() => {});
@@ -88,6 +116,7 @@ export default function GameApp() {
       setSolve(res);
       setStatus(res.correct ? 'success' : 'error');
       if (res.correct) {
+        setVerdictDialogOpen(true);
         const list = await api.episodes();
         setEpisodes(list);
         const active = list.find((e) => e.status === 'available');
@@ -106,137 +135,199 @@ export default function GameApp() {
     setSolve(null);
   };
 
-  const tabClass = (ep: EpisodeSummary) => {
-    const base = 'min-h-[44px] cursor-pointer rounded-md border px-3 py-1.5 text-sm font-medium transition active:scale-[0.98]';
-    if (episode?.id === ep.id) {
-      return `${base} border-accent bg-accent/10 text-accent`;
-    }
-    if (ep.status === 'solved') {
-      return `${base} border-accent/30 bg-surface-1 text-accent/80 hover:border-accent`;
-    }
-    if (ep.status === 'available') {
-      return `${base} border-white/15 text-ink hover:border-accent/60`;
-    }
-    return `${base} cursor-not-allowed border-white/5 text-slate-600`;
-  };
+  const totalScore = episodes?.reduce((acc, e) => acc + (e.best_score ?? 0), 0) ?? 0;
 
-  const actionBtn =
-    'min-h-[44px] cursor-pointer rounded-md bg-accent px-4 py-2 text-sm font-semibold text-surface-0 transition hover:bg-accent-strong active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40';
+  const solvedCount = episodes?.filter((e) => e.status === 'solved').length ?? 0;
+  const totalCount = episodes?.length ?? 5;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">
-            <span className="text-accent">Query</span> Noir
-          </h1>
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">
+    <SidebarProvider defaultOpen>
+      <Sidebar collapsible="icon">
+        <SidebarHeader>
+          <div className="flex items-center gap-2 px-2">
+            <span className="text-lg font-black tracking-tight">
+              <span className="text-primary">Query</span> Noir
+            </span>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Kasus</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {episodes?.map((ep, i) => {
+                  const Icon = EPISODE_ICONS[i % EPISODE_ICONS.length];
+                  return (
+                    <SidebarMenuItem key={ep.id}>
+                      <SidebarMenuButton
+                        isActive={episode?.id === ep.id}
+                        onClick={() => selectEpisode(ep.id)}
+                        disabled={ep.status === 'locked'}
+                        tooltip={ep.title}
+                      >
+                        <Icon />
+                        <span>Bab {ep.id}</span>
+                        <SidebarMenuBadge>
+                          {ep.status === 'solved' ? '✓' : ep.status === 'locked' ? '🔒' : ''}
+                        </SidebarMenuBadge>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarSeparator />
+          <SidebarGroup>
+            <SidebarGroupLabel>Skor</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="px-3 py-1">
+                <div className="flex items-center justify-between font-mono text-xs">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="text-primary">{totalScore}</span>
+                </div>
+                <Progress value={(solvedCount / totalCount) * 100} className="mt-2" />
+                <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                  {solvedCount}/{totalCount} kasus
+                </p>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="p-2">
+            <Button variant="outline" size="sm" className="w-full" onClick={() => location.reload()}>
+              <RotateCcw /> Mulai ulang
+            </Button>
+          </div>
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex items-center gap-2 border-b px-4 py-2">
+          <SidebarTrigger />
+          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             Kasus {episode ? String(episode.id).padStart(2, '0') : '--'}
-          </p>
-        </div>
-        <nav className="flex gap-2" aria-label="Pilih kasus">
-          {episodes?.map((ep) => (
-            <button
-              key={ep.id}
-              onClick={() => selectEpisode(ep.id)}
-              disabled={ep.status === 'locked'}
-              title={ep.title}
-              className={tabClass(ep)}>
-              Bab {ep.id}
-            </button>
-          ))}
-        </nav>
-      </header>
+          </span>
+        </header>
+        <main className="flex-1 p-6">
+          {error && !episode && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertTitle>Gagal memuat</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {error && !episode && (
-        <div className="mb-6 rounded-md border border-red-900 bg-red-950/30 p-4 text-sm text-red-300">
-          Gagal memuat episode: {error}
-        </div>
-      )}
-
-      {episode ? (
-        <main className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
-          <StoryPanel title={episode.title} focus={episode.focus} brief={episode.brief} goal={episode.goal}>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
-              {STATUS_LABEL[episode.status]}
-            </p>
-            {episode.hints.length > 0 && (
-              <div className="mt-4 border-t border-white/10 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Petunjuk</p>
-                <ol className="mt-1 list-inside list-decimal space-y-1 text-sm text-slate-300">
-                  {episode.hints.map((h, i) => (
-                    <li key={i}>{h}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
-          </StoryPanel>
-
-          <section className="rounded-lg border border-white/10 bg-surface-1/60 p-6">
-            <SqlEditor value={sql} onChange={handleChange} onSubmit={runQuery} />
-
-            <div className="mb-4">
-              <button onClick={runQuery} disabled={status === 'loading' || !sql.trim()} className={actionBtn}>
-                {status === 'loading' ? 'Menjalankan…' : 'Run Query'}
-              </button>
-            </div>
-
-            <div className="mb-4 rounded-lg border border-white/10 bg-surface-1 p-3">
-              <label htmlFor="answer-input" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Tebak pelaku, tulis nama atau kode
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="answer-input"
-                  type="text"
-                  value={answer}
-                  onChange={(e) => { setAnswer(e.target.value); setSolve(null); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') submitAnswer(); }}
-                  placeholder="mis. Irfan Maulana atau P-1003"
-                  className="w-full rounded-md border border-white/15 bg-surface-0 px-3 py-2 font-mono text-sm text-accent outline-none placeholder:text-slate-600 focus:border-accent"
-                />
-                <button
-                  onClick={submitAnswer}
-                  disabled={status === 'loading' || !answer.trim()}
-                  className="whitespace-nowrap rounded-md border border-accent px-4 py-2 text-sm font-semibold text-accent transition hover:bg-accent/10 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40">
-                  Tebak Pelaku
-                </button>
-              </div>
-            </div>
-
-            {error && episode && (
-              <div className="mb-4 rounded-md border border-red-900 bg-red-950/30 p-3 text-sm text-red-300">{error}</div>
-            )}
-
-            {solve && (
-              <div
-                className={`animate-rise-in mb-4 rounded-md border p-4 text-sm ${
-                  solve.correct
-                    ? 'border-accent bg-accent/10 text-ink'
-                    : 'border-white/15 bg-surface-1 text-ink'
-                }`}>
-                <p className="font-semibold">{solve.correct ? 'Kasus terpecahkan' : 'Belum benar'}</p>
-                <p className="mt-1 text-slate-300">{solve.message}</p>
-                {solve.correct && solve.score !== undefined && (
-                  <p className="mt-2 font-mono text-xs text-slate-400">
-                    query {String(solve.breakdown?.queryCount ?? 0).padStart(2, '0')}
-                    {'  '}salah {String(solve.breakdown?.wrongAttempts ?? 0).padStart(2, '0')}
-                    {'  '}skor {solve.score}
-                  </p>
+          {episode ? (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
+              <StoryPanel
+                title={episode.title}
+                focus={episode.focus}
+                statusLabel={STATUS_LABEL[episode.status]}
+                brief={episode.brief}
+                goal={episode.goal}
+              >
+                {episode.hints.length > 0 && (
+                  <div className="mt-2 border-t pt-4">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Petunjuk
+                    </p>
+                    <ol className="mt-2 list-inside list-decimal space-y-1.5 text-sm text-foreground/80">
+                      {episode.hints.map((h, i) => (
+                        <li key={i}>{h}</li>
+                      ))}
+                    </ol>
+                  </div>
                 )}
-                {solve.verdict && <p className="mt-2 border-t border-white/10 pt-2 text-slate-300">{solve.verdict}</p>}
-              </div>
-            )}
+              </StoryPanel>
 
-            <ResultTable columns={query?.columns ?? []} rows={query?.rows ?? []} />
-            {query?.truncated && (
-              <p className="mt-2 text-xs text-slate-500">Hasil dibatasi 500 baris - persempit query kamu.</p>
-            )}
-          </section>
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6 rounded-lg border bg-card px-6 py-5">
+                  <SqlEditor value={sql} onChange={handleChange} onSubmit={runQuery} />
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button onClick={runQuery} disabled={status === 'loading' || !sql.trim()} className="min-h-11">
+                      {status === 'loading' ? 'Menjalankan…' : 'Run Query'}
+                    </Button>
+                  </div>
+
+                  <Card className="gap-3 border p-4 shadow-none">
+                    <CardContent className="flex flex-col gap-2 p-0">
+                      <label htmlFor="answer-input" className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Tebak pelaku — tulis nama atau kode
+                      </label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Input
+                          id="answer-input"
+                          value={answer}
+                          onChange={(e) => { setAnswer(e.target.value); setSolve(null); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') submitAnswer(); }}
+                          placeholder="mis. Irfan Maulana atau P-1003"
+                          className="max-w-64 bg-background font-mono"
+                        />
+                        <Button
+                          onClick={submitAnswer}
+                          disabled={status === 'loading' || !answer.trim()}
+                          variant="outline"
+                          className="min-h-11"
+                        >
+                          Tebak Pelaku
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {error && episode && (
+                  <Alert variant="destructive">
+                    <AlertTitle>Query error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                {solve && !solve.correct && (
+                  <Card className="gap-3 border-amber-500/40 p-4 shadow-none animate-rise-in">
+                    <CardContent className="flex flex-col gap-1 p-0">
+                      <Badge variant="outline" className="w-fit text-amber-500">Belum benar</Badge>
+                      <p className="text-sm text-foreground/80">{solve.message}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <ResultTable columns={query?.columns ?? []} rows={query?.rows ?? []} />
+                {query?.truncated && (
+                  <p className="text-xs text-muted-foreground">Hasil dibatasi 500 baris — persempit query kamu.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Memuat kasus…</p>
+          )}
         </main>
-      ) : (
-        <p className="text-slate-400">Memuat kasus…</p>
-      )}
-    </div>
+      </SidebarInset>
+
+      <Dialog open={verdictDialogOpen} onOpenChange={setVerdictDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Sparkles /> Kasus terpecahkan
+            </DialogTitle>
+            <DialogDescription>
+              {solve?.message}
+            </DialogDescription>
+          </DialogHeader>
+          {solve?.score !== undefined && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3 font-mono text-sm">
+              <span className="text-muted-foreground">query {String(solve.breakdown?.queryCount ?? 0).padStart(2, '0')}</span>
+              <span className="text-muted-foreground">salah {String(solve.breakdown?.wrongAttempts ?? 0).padStart(2, '0')}</span>
+              <span className="font-semibold text-primary">skor {solve.score}</span>
+            </div>
+          )}
+          {solve?.verdict && (
+            <p className="border-t pt-3 text-sm leading-relaxed text-foreground/80">{solve.verdict}</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </SidebarProvider>
   );
 }

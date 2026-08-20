@@ -9,7 +9,7 @@ function progressMap() {
   const db = openProgressionDb();
   try {
     const rows = db.prepare('SELECT * FROM progress').all();
-    return new Map(rows.map((r) => [r.episode_id, r.status]));
+    return new Map(rows.map((r) => [r.episode_id, r]));
   } finally {
     db.close();
   }
@@ -18,13 +18,17 @@ function progressMap() {
 episodeRouter.get('/', (_req, res) => {
   const statuses = progressMap();
   res.json({
-    episodes: EPISODE_DEFS.map((d) => ({
-      id: d.id,
-      title: d.title,
-      focus: d.focus,
-      status: statuses.get(d.id) ?? 'locked',
-      tables: d.tables.map((t) => t.name),
-    })),
+    episodes: EPISODE_DEFS.map((d) => {
+      const p = statuses.get(d.id);
+      return {
+        id: d.id,
+        title: d.title,
+        focus: d.focus,
+        status: p?.status ?? 'locked',
+        best_score: p?.best_score ?? 0,
+        tables: d.tables.map((t) => t.name),
+      };
+    }),
   });
 });
 

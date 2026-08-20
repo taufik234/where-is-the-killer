@@ -5,6 +5,7 @@ export interface EpisodeSummary {
   title: string;
   focus: string;
   status: 'locked' | 'available' | 'solved';
+  best_score: number;
   tables: string[];
 }
 

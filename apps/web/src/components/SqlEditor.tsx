@@ -1,3 +1,5 @@
+import { Textarea } from '@/components/ui/textarea';
+
 interface SqlEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -6,11 +8,11 @@ interface SqlEditorProps {
 
 export default function SqlEditor({ value, onChange, onSubmit }: SqlEditorProps) {
   return (
-    <div className="mb-4">
-      <label htmlFor="sql-input" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+    <div className="space-y-1">
+      <label htmlFor="sql-input" className="block font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         Editor SQL
       </label>
-      <textarea
+      <Textarea
         id="sql-input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -19,11 +21,11 @@ export default function SqlEditor({ value, onChange, onSubmit }: SqlEditorProps)
         }}
         spellCheck={false}
         placeholder={`-- tulis query bukti di sini\nSELECT * FROM ...`}
-        className="w-full rounded-md border border-white/15 bg-surface-0 p-3 font-mono text-sm text-accent caret-accent outline-none placeholder:text-slate-600 focus:border-accent"
+        className="min-h-32 bg-background font-mono text-sm text-primary caret-primary placeholder:text-slate-600"
         rows={7}
       />
-      <p className="mt-1 text-xs text-slate-500">
-        jalankan: <kbd className="rounded bg-surface-2 px-1">Ctrl</kbd>+<kbd className="rounded bg-surface-2 px-1">Enter</kbd>
+      <p className="text-xs text-muted-foreground">
+        jalankan: <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">Ctrl</kbd>+<kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd>
       </p>
     </div>
   );
