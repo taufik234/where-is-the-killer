@@ -24,12 +24,19 @@ export default function StoryPanel({ title, focus, statusLabel, brief, goal, chi
         </span>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <p className="text-sm leading-relaxed text-foreground/80">{brief}</p>
-        <div className="rounded-md border bg-muted/30 p-4">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tujuan</p>
-          <p className="mt-1 text-sm leading-relaxed text-foreground/90">{goal}</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ringkasan</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/80">{brief}</p>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-4">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tujuan</p>
+              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{goal}</p>
+            </div>
+          </div>
+          <div>{children}</div>
         </div>
-        {children}
       </CardContent>
     </Card>
   );
