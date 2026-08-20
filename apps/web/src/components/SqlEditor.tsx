@@ -18,11 +18,13 @@ export default function SqlEditor({ value, onChange, onSubmit }: SqlEditorProps)
           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') onSubmit();
         }}
         spellCheck={false}
-        placeholder="-- tulis query bukti di sini&#10;SELECT * FROM ..."
-        className="w-full rounded-lg border border-slate-700 bg-slate-900 p-3 font-mono text-sm text-emerald-300 outline-none focus:border-sky-500"
+        placeholder={`-- tulis query bukti di sini\nSELECT * FROM ...`}
+        className="w-full rounded-md border border-white/15 bg-surface-0 p-3 font-mono text-sm text-accent caret-accent outline-none placeholder:text-slate-600 focus:border-accent"
         rows={7}
       />
-      <p className="mt-1 text-xs text-slate-500">berjalan: <kbd className="rounded bg-slate-800 px-1">Ctrl</kbd>+<kbd className="rounded bg-slate-800 px-1">Enter</kbd></p>
+      <p className="mt-1 text-xs text-slate-500">
+        jalankan: <kbd className="rounded bg-surface-2 px-1">Ctrl</kbd>+<kbd className="rounded bg-surface-2 px-1">Enter</kbd>
+      </p>
     </div>
   );
 }

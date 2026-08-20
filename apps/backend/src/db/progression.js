@@ -5,7 +5,7 @@ import { PROGRESSION_DB_PATH, DATA_DIR } from './connection.js';
 
 // Player save data — separate from evidence, so reseeding evidence never
 // wipes progress. schema_version future-proofs migrations.
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 export function ensureProgressionDb() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -29,6 +29,21 @@ export function ensureProgressionDb() {
       solved_at TEXT
     );
   `);
+
+  // Migrasi v1 → v2: tambah kolom skor/counter. SQLite tak punya ADD COLUMN
+  // IF NOT EXISTS → guard lewat PRAGMA table_info.
+  const cols = new Set(
+    db.prepare('PRAGMA table_info(progress)').all().map((c) => c.name)
+  );
+  const adds = [
+    ['query_count', 'INTEGER NOT NULL DEFAULT 0'],
+    ['wrong_attempts', 'INTEGER NOT NULL DEFAULT 0'],
+    ['best_score', 'INTEGER NOT NULL DEFAULT 0'],
+  ];
+  for (const [name, def] of adds) {
+    if (!cols.has(name)) db.exec(`ALTER TABLE progress ADD COLUMN ${name} ${def}`);
+  }
+
   db.close();
   return PROGRESSION_DB_PATH;
 }

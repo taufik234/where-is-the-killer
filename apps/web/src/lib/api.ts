@@ -35,9 +35,13 @@ export interface SolveResponse {
   message: string;
   verdict?: string;
   alreadySolved?: boolean;
+  score?: number;
+  breakdown?: { queryCount: number; wrongAttempts: number };
 }
 
-const API_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8787';
+// Relative by default: API dan frontend disajikan dari port yang sama (produksi).
+// Dev: setel PUBLIC_API_URL (mis. http://localhost:8787) bila frontend di port berbeda.
+const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 
 export const api = {
   async episodes(): Promise<EpisodeSummary[]> {
@@ -48,18 +52,25 @@ export const api = {
   async episode(id: number): Promise<EpisodeDetail> {
     return (await fetch(`${API_URL}/api/episodes/${id}`)).json() as Promise<EpisodeDetail>;
   },
-  async execute(sql: string): Promise<QueryResponse> {
+  async execute(episodeId: number, sql: string): Promise<QueryResponse> {
     return (await fetch(`${API_URL}/api/execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sql }),
+      body: JSON.stringify({ episodeId, sql }),
     })).json() as Promise<QueryResponse>;
   },
-  async solve(id: number, sql: string): Promise<SolveResponse> {
+  async start(id: number): Promise<{ episodeId: number; queryCount: number; wrongAttempts: number }> {
+    return (await fetch(`${API_URL}/api/episodes/${id}/start`, { method: 'POST' })).json() as Promise<{
+      episodeId: number;
+      queryCount: number;
+      wrongAttempts: number;
+    }>;
+  },
+  async solve(id: number, answer: string): Promise<SolveResponse> {
     return (await fetch(`${API_URL}/api/solve/${id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sql }),
+      body: JSON.stringify({ answer }),
     })).json() as Promise<SolveResponse>;
   },
 };

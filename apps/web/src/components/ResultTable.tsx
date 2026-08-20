@@ -5,15 +5,17 @@ interface ResultTableProps {
 
 export default function ResultTable({ columns, rows }: ResultTableProps) {
   if (columns.length === 0) {
-    return <p className="text-sm text-slate-400">Jalankan query untuk melihat hasil.</p>;
+    return <p className="text-sm text-slate-500">Jalankan query untuk melihat hasil.</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-700">
+    <div className="overflow-x-auto rounded-md border border-white/10">
       <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-slate-800">
+        <thead className="bg-surface-2">
           <tr>
             {columns.map((col) => (
-              <th key={col} className="border-b border-slate-700 px-3 py-2 font-mono text-xs font-semibold text-sky-400">
+              <th
+                key={col}
+                className="border-b border-white/10 px-3 py-2 font-mono text-xs font-semibold text-accent">
                 {col}
               </th>
             ))}
@@ -21,9 +23,9 @@ export default function ResultTable({ columns, rows }: ResultTableProps) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="odd:bg-slate-900 even:bg-slate-900/60">
+            <tr key={i} className="odd:bg-surface-0/40 even:bg-surface-1">
               {columns.map((col) => (
-                <td key={col} className="border-b border-slate-800 px-3 py-1.5 font-mono text-xs text-slate-300">
+                <td key={col} className="border-b border-white/5 px-3 py-1.5 font-mono text-xs text-slate-300">
                   {String(row[col] ?? '')}
                 </td>
               ))}

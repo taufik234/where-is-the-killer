@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter @query-noir/backend --filter @query-noir/web dev",
     "build": "pnpm -r build",
+    "start": "pnpm build && pnpm --filter @query-noir/backend start",
     "seed": "pnpm --filter @query-noir/backend seed"
   },
   "engines": {

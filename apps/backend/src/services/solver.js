@@ -1,73 +1,33 @@
-import { openEvidenceDb } from '../db/connection.js';
-import { QueryError } from './executor.js';
 import { getEpisodeDefs } from '../data/episodes/index.js';
+import { QueryError } from './executor.js';
 import { openProgressionDb } from '../db/progression.js';
 
 const EPISODE_DEFS = getEpisodeDefs();
 
-// Pre-compute the canonical answer-set for each episode so "solve" never runs
-// player SQL for validation — only fixed queries we authored.
-const CULPRITS = (() => {
-  const db = openEvidenceDb();
-  try {
-    const map = {};
-    for (const def of EPISODE_DEFS) {
-      map[def.id] = { tokens: def.culprit.tokens ?? [def.culprit.employee_code] };
-    }
-    return map;
-  } finally {
-    db.close();
-  }
-})();
+// Normalisasi jawaban: huruf kecil, spasi berlebih dirapikan.
+const norm = (s) => String(s).trim().toLowerCase().replace(/\s+/g, ' ');
 
-// Check whether the player's submitted SQL actually surfaces the culprit code.
-export function evaluateSolution(episodeId, sql) {
-  if (typeof sql !== 'string' || sql.trim() === '') {
+// Check whether the player's answer matches the culprit (name/kode/nama vendor/etc).
+// Tidak lagi menjalankan SQL pemain — jawaban dibandingkan langsung dengan token.
+export function evaluateSolution(episodeId, answer) {
+  if (typeof answer !== 'string' || answer.trim() === '') {
     throw new QueryError('Jawaban kosong.');
   }
   const def = EPISODE_DEFS.find((d) => d.id === Number(episodeId));
   if (!def) throw new QueryError(`Episode ${episodeId} tidak ditemukan.`);
 
-  const db = openEvidenceDb();
-  try {
-    const rows = db.prepare(sql).all();
-    const tokens = CULPRITS[Number(episodeId)].tokens;
+  const tokens = (def.culprit.tokens ?? [def.culprit.employee_code]).map(norm);
+  const answerNorm = norm(answer);
+  const correct = tokens.some((tok) => answerNorm === tok || answerNorm.includes(tok));
 
-    // A row "surfaces the culprit" if any of its cell values contains one of
-    // the culprit tokens (employee code, name, vendor, or chat id).
-    const found = rows.some((row) =>
-      Object.values(row).some(
-        (v) => typeof v === 'string' && tokens.some((tok) => v.includes(tok))
-      )
-    );
-
-    // Anti-scatter: a query that just dumps the whole evidence table isn't a
-    // "solution". The returned rows must be a real filter — fewer than the
-    // full row count of the episode's primary table.
-    const targetTable = def.tables[0].name;
-    const total = db.prepare(`SELECT COUNT(*) AS c FROM "${targetTable}"`).get().c;
-    const isolates = rows.length < total;
-    const correct = found && isolates;
-
-    return {
-      correct,
-      rows: rows.slice(0, 20),
-      rowCount: rows.length,
-      message: correct
-        ? `Query kamu menemukan pelaku — bukti cukup.`
-        : 'Query kamu belum menemukan pelaku. Periksa kembali data dan pendekatanmu.',
-    };
-  } catch (err) {
-    // A failed player query is feedback, not a crash.
-    return {
-      correct: false,
-      rows: [],
-      rowCount: 0,
-      message: `Query tidak dapat dijalankan: ${err.message}`,
-    };
-  } finally {
-    db.close();
-  }
+  return {
+    correct,
+    rows: [],
+    rowCount: 0,
+    message: correct
+      ? 'Jawaban benar — bukti cukup. Kasus terpecahkan.'
+      : 'Jawaban belum benar. Periksa kembali data dan pendekatanmu.',
+  };
 }
 
 export function isEpisodeSolved(episodeId) {
@@ -82,16 +42,43 @@ export function isEpisodeSolved(episodeId) {
   }
 }
 
-export function markSolved(episodeId) {
+// Bonus efisiensi & akurasi: makin sedikit query valid / salah tebak, makin tinggi skor.
+// Hint tidak masuk hitungan. Floor 0, tidak pernah negatif.
+export function computeScore(queryCount, wrongAttempts) {
+  return Math.max(0, 1000 - 40 * queryCount - 150 * wrongAttempts);
+}
+
+// Catat satu tebakan salah pada attempt aktif.
+export function recordWrongAttempt(episodeId) {
   const db = openProgressionDb();
   try {
     db.prepare(
-      "UPDATE progress SET status = 'solved', solved_at = ? WHERE episode_id = ?"
-    ).run(new Date().toISOString(), episodeId);
+      'UPDATE progress SET wrong_attempts = wrong_attempts + 1 WHERE episode_id = ?'
+    ).run(episodeId);
   } finally {
     db.close();
   }
 }
+
+// Hitung skor saat solve benar + perbarui best_score. Return breakdown/skor.
+export function recordSolved(episodeId) {
+  const db = openProgressionDb();
+  try {
+    const row = db
+      .prepare('SELECT query_count, wrong_attempts, best_score FROM progress WHERE episode_id = ?')
+      .get(episodeId);
+    const q = row?.query_count ?? 0;
+    const w = row?.wrong_attempts ?? 0;
+    const score = computeScore(q, w);
+    db.prepare(
+      "UPDATE progress SET best_score = MAX(best_score, ?), status = 'solved', solved_at = ? WHERE episode_id = ?"
+    ).run(score, new Date().toISOString(), episodeId);
+    return { score, breakdown: { queryCount: q, wrongAttempts: w } };
+  } finally {
+    db.close();
+  }
+}
+
 
 export function unlockNext(episodeId) {
   const db = openProgressionDb();

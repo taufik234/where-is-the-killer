@@ -3,7 +3,8 @@ import { getEpisodeDefs } from '../data/episodes/index.js';
 import {
   evaluateSolution,
   isEpisodeSolved,
-  markSolved,
+  recordWrongAttempt,
+  recordSolved,
   unlockNext,
 } from '../services/solver.js';
 import { QueryError } from '../services/executor.js';
@@ -16,19 +17,12 @@ solveRouter.post('/:episodeId', (req, res) => {
   const def = EPISODE_DEFS.find((d) => d.id === episodeId);
   if (!def) return res.status(404).json({ error: 'Episode tidak ditemukan.' });
 
-  if (isEpisodeSolved(episodeId)) {
-    return res.json({
-      correct: true,
-      message: 'Bab ini sudah kamu pecahkan.',
-      alreadySolved: true,
-      verdict: def.culprit.verdict,
-    });
-  }
+  const wasSolved = isEpisodeSolved(episodeId);
 
-  const { sql } = req.body ?? {};
+  const { answer } = req.body ?? {};
   let outcome;
   try {
-    outcome = evaluateSolution(episodeId, sql);
+    outcome = evaluateSolution(episodeId, answer);
   } catch (err) {
     if (err instanceof QueryError) {
       return res.status(400).json({ ok: false, error: err.message });
@@ -37,8 +31,18 @@ solveRouter.post('/:episodeId', (req, res) => {
   }
 
   if (outcome.correct) {
-    markSolved(episodeId);
+    // Bab sudah pernah solved di attempt sebelumnya -> replay. Skor dihitung
+    // ulang; recordSolved memakai MAX sehingga best_score tak pernah turun.
+    const scored = recordSolved(episodeId);
     unlockNext(episodeId);
+    res.json({
+      ...outcome,
+      ...scored,
+      alreadySolved: wasSolved,
+      verdict: def.culprit.verdict,
+    });
+  } else {
+    recordWrongAttempt(episodeId);
+    res.json(outcome);
   }
-  res.json({ ...outcome, verdict: outcome.correct ? def.culprit.verdict : undefined });
 });

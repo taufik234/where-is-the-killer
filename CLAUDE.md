@@ -32,9 +32,11 @@ Two SQLite databases under `apps/backend/data/` (both gitignored):
 ### SQL execution & solve validation (`src/services/`)
 
 - `executor.js` (`/api/execute`): allowlists first keyword (SELECT/WITH/PRAGMA/VALUES/EXPLAIN), readonly DB as second layer, caps results at 500 rows, maps parser errors to `400`.
-- `solver.js` (`/api/solve/:id`): runs the **player's submitted SQL directly** against the readonly evidence DB, then checks result rows for any cell containing a pre-computed culprit token (`culprit.tokens`, e.g. employee code or name). **Anti-scatter rule**: a passing query must return *fewer* rows than the episode's primary table (`def.tables[0]`) — a full-table dump never counts as a solution. On success: `markSolved` + `unlockNext` (id+1).
+- `solver.js` (`/api/solve/:id`): **does not run player SQL** — player submits a text `answer` (nama/kode vendor pelaku) in the JSON body; the answer is normalized and matched case-insensitively against `culprit.tokens` (e.g. employee code or name). `/api/execute` is the only endpoint that runs arbitrary SQL (allowlist + readonly). On success: `recordSolved` (hitung skor + `best_score` via MAX) + `unlockNext` (id+1).
 
-Note the asymmetry: `/api/execute` and `/api/solve` both execute arbitrary SQL, but only `/api/execute` runs the allowlist. Safety on the solve path relies solely on `readonly: true` — don't remove that.
+- **Scoring** (driven by `culprit` activity): `query_count` naik di `progress` tiap `/api/execute` valid + `episodeId` yang main, `wrong_attempts` naik tiap solve salah. Formula di `computeScore`: `max(0, 1000 − 40×query − 150×wrong)`. `POST /api/episodes/:id/start` me-reset counter (attempt baru, idempoten). Hint gratis — tidak masuk skor. `best_score` per episode dipertahankan via MAX; total skor pemain = SUM(best_score). Spec: `docs/superpowers/specs/2026-08-20-gameplay-score-system-design.md`.
+
+Note the asymmetry: `/api/execute` runs arbitrary SQL, but `/api/solve` only compares text — safety on the solve path needs no DB access at all. Don't add SQL execution back to the solve path.
 
 ### Request flow
 
