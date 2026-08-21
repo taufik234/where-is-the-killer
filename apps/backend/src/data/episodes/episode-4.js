@@ -1,7 +1,4 @@
 // Bab 4: Skype Murahan Fokus: Subqueries.
-// Riwayat chat korban ditemukan dari file recovery. Pelaku menghapus sebagian
-// besar pesan, tapi log server menyimpan sebagian. Sender disembunyikan di
-// balik kode anonim (sender_id), petakan ke karyawan lewat dispatch_log.
 export const episode4 = {
   id: 4,
   title: 'Skype Murahan',
@@ -23,20 +20,20 @@ export const episode4 = {
       ],
       rows: [
         [1, 'user_004', 'Gudang-L3', '22:58', 'text', 'Kau di mana?'],
-        [2, 'user_003', 'Gudang-L3', '22:59', 'text', 'Kau pikir kau bisa sembunyi dari aku?'],
+        [2, 'user_009', 'Gudang-L3', '22:59', 'text', 'Kau pikir kau bisa sembunyi dari aku?'],
         [3, 'user_002', 'Gudang-L3', '22:59', 'text', 'Jam kerja sudah habis, kenapa ribut?'],
-        [4, 'user_003', 'Gudang-L3', '23:00', 'text', 'Aku tahu semua yang kau lakukan.'],
+        [4, 'user_009', 'Gudang-L3', '23:00', 'text', 'Aku tahu semua yang kau lakukan.'],
         [5, 'user_007', 'Gudang-L3', '23:01', 'text', 'Malam ini gudang sepi, aman.'],
-        [6, 'user_003', 'Gudang-L3', '23:02', 'text', 'Temui aku di lantai tiga. Sendiri.'],
-        [7, 'user_009', 'Gudang-L3', '23:03', 'text', 'Itu terlalu berbahaya. Jangan sendirian.'],
-        [8, 'user_003', 'Gudang-L3', '23:04', 'text', 'Jangan bawa orang lain. Kalau kau bawa polisi, kau tahu akibatnya.'],
+        [6, 'user_009', 'Gudang-L3', '23:02', 'text', 'Temui aku di lantai tiga. Sendiri.'],
+        [7, 'user_003', 'Gudang-L3', '23:03', 'text', 'Itu terlalu berbahaya. Jangan sendirian.'],
+        [8, 'user_009', 'Gudang-L3', '23:04', 'text', 'Jangan bawa orang lain. Kalau kau bawa polisi, kau tahu akibatnya.'],
         [9, 'user_001', 'Gudang-L3', '23:05', 'text', 'Ada yang aneh di lantai tiga tadi malam.'],
-        [10, 'user_003', 'Gudang-L3', '23:06', 'text', 'Kau sudah menghancurkan hidupku. Sekarang giliranku.'],
+        [10, 'user_009', 'Gudang-L3', '23:06', 'text', 'Kau sudah menghancurkan hidupku. Sekarang giliranku.'],
         [11, 'user_002', 'Gudang-L3', '23:07', 'text', 'Terlalu banyak drama. Aku pulang.'],
-        [12, 'user_003', 'Gudang-L3', '23:08', 'text', 'Datang sekarang, atau aku pastikan semua orang tahu rahasiamu.'],
+        [12, 'user_009', 'Gudang-L3', '23:08', 'text', 'Datang sekarang, atau aku pastikan semua orang tahu rahasiamu.'],
         [13, 'user_005', 'Gudang-L3', '23:09', 'text', 'Siapa yang masih di gudang? Sabit gudang harus dikunci.'],
-        [14, 'user_003', 'Gudang-L3', '23:10', 'text', 'Terlambat. Aku menunggu di dekat pintu darurat.'],
-        [15, 'user_009', 'Gudang-L3', '23:11', 'text', 'Sudah cek, pintu darurat terbuka dari dalam.'],
+        [14, 'user_009', 'Gudang-L3', '23:10', 'text', 'Terlambat. Aku menunggu di dekat pintu darurat.'],
+        [15, 'user_003', 'Gudang-L3', '23:11', 'text', 'Sudah cek, pintu darurat terbuka dari dalam.'],
       ],
     },
     {
@@ -66,14 +63,14 @@ export const episode4 = {
     comment:
       'Gabungkan messages ke dispatch_log (sender_id) lalu ke employees (employee_code). Cari pesan berisi ancaman ("hancur", "akibatnya") yang dikirim pada rentang malam pembunuhan.',
     explanation:
-      'Pesan paling mengancam ("Kau sudah menghancurkan hidupku. Sekarang giliranku.", "Datang sekarang, atau…") datang dari user_003. dispatch_log memetakan user_003 → P-1003 → Irfan Maulana, mantan kepala keamanan yang baru dipecat.',
+      'Pesan paling mengancam ("Kau sudah menghancurkan hidupku. Sekarang giliranku.", "Datang sekarang, atau...") datang dari user_009. dispatch_log memetakan user_009 ke P-1009, Andi Saputra, admin IT yang aksesnya dipakai untuk menghapus log.',
   },
   culprit: {
-    employee_code: 'P-1003',
-    name: 'Irfan Maulana',
-    tokens: ['P-1003', 'user_003', 'Irfan Maulana'],
+    employee_code: 'P-1009',
+    name: 'Andi Saputra',
+    tokens: ['P-1009', 'user_009', 'Andi Saputra', 'Andi'],
     verdict:
-      'user_003 = Irfan Maulana (P-1003), mantan kepala keamanan yang dipecat Victor. Ia mengancam korban di chat, lalu memancingnya ke lorong gudang pada malam itu.',
+      'user_009 adalah Andi Saputra (P-1009), admin IT yang diminta Victor untuk audit akses. Ia mengancam korban di chat, lalu memancingnya ke lorong gudang pada malam itu.',
   },
   hints: [
     'Baca isi pesan: mana yang benar-benar ancaman, bukan sekadar percakapan biasa?',
@@ -82,7 +79,7 @@ export const episode4 = {
     'Terakhir, hubungkan employee_code ke employees untuk mendapatkan nama.',
   ],
   redHerrings: [
-    'user_002 (Ratna) dan user_009 (Andi) aktif mengomentari, tapi tidak pernah mengancam.',
+    'user_002 (Ratna) dan user_003 (Irfan) aktif mengomentari, tapi tidak pernah mengancam.',
     'user_007 (Fajar) menyebut gudang sepi, penting untuk alibi, tapi bukan pengirim ancaman.',
   ],
 };

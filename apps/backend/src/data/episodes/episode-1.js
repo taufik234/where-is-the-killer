@@ -1,7 +1,4 @@
 // Bab 1: Kecelakaan atau Pembunuhan? Fokus: SELECT, WHERE.
-// Victor Hale ditemukan tewas di lantai gudang Pabrik Sterling. CCTV buta,
-// tapi penjaga gerbang mencatat semua orang yang masuk keluar. Detektif harus
-// melihat siapa yang berada di dalam pabrik pada jam kematian (23:10).
 export const episode1 = {
   id: 1,
   title: 'Kecelakaan atau Pembunuhan?',
@@ -25,7 +22,7 @@ export const episode1 = {
         [3, 'P-1007', 'IN', '23:04'],
         [4, 'P-1003', 'IN', '23:05'],
         [5, 'P-1009', 'OUT', '23:07'],
-        [6, 'P-1007', 'OUT', '23:12'],
+        [6, 'P-1003', 'OUT', '23:12'],
         [7, 'P-1011', 'IN', '23:13'],
         [8, 'P-1006', 'IN', '23:15'],
         [9, 'P-1001', 'IN', '23:16'],
@@ -38,16 +35,16 @@ export const episode1 = {
     query:
       "SELECT DISTINCT employee_code FROM access_log_factory al WHERE event = 'IN' AND timestamp <= '23:10' AND NOT EXISTS (SELECT 1 FROM access_log_factory a2 WHERE a2.employee_code = al.employee_code AND a2.event = 'OUT' AND a2.timestamp >= '23:10')",
     comment:
-      'Cari orang yang masuk sebelum 23:10 (event IN) dan BELUM tercatat keluar pada/ setelah 23:10. NOT EXISTS menghapus yang sudah keluar.',
+      'Cari orang yang masuk sebelum 23:10 (event IN) dan BELUM tercatat keluar pada atau setelah 23:10. NOT EXISTS menghapus yang sudah keluar.',
     explanation:
-      'Di dalam pabrik saat 23:10 ada dua orang: P-1007 (IN 23:04, OUT 23:12, masih di dalam tapi langsung melapor) dan P-1003 (IN 23:05, tidak ada catatan OUT, tidak pernah melapor). P-1001 masuk 23:02 tapi sudah keluar 23:03, sebelum kejadian.',
+      'Di dalam pabrik saat 23:10 ada dua orang: P-1007 (IN 23:04, tidak ada catatan OUT, tidak pernah melapor) dan P-1003 (IN 23:05, OUT 23:12, masih di dalam tapi langsung melapor dan diwawancarai). P-1001 masuk 23:02 tapi sudah keluar 23:03, sebelum kejadian.',
   },
   culprit: {
-    employee_code: 'P-1003',
-    name: 'Irfan Maulana',
-    tokens: ['P-1003', 'Irfan Maulana'],
+    employee_code: 'P-1007',
+    name: 'Fajar Prasetyo',
+    tokens: ['P-1007', 'Fajar Prasetyo', 'Fajar'],
     verdict:
-      'P-1003 (Irfan Maulana) masuk pukul 23:05 dan TIDAK tercatat keluar sebelum 23:10. Ia masih berada di dalam pabrik saat Victor tewas dan tidak melaporkan diri. Motif: Irfan baru saja dipecat oleh Victor seminggu sebelumnya.',
+      'P-1007 (Fajar Prasetyo) masuk pukul 23:04 dan TIDAK tercatat keluar sebelum 23:10. Ia masih berada di dalam pabrik saat Victor tewas dan tidak melaporkan diri. Motif: Fajar baru saja ditegur keras oleh Victor karena kehilangan stok gudang senilai puluhan juta.',
   },
   hints: [
     'Mulailah dengan melihat seluruh isi tabel access_log_factory.',
@@ -56,7 +53,7 @@ export const episode1 = {
     'Dua orang berada di dalam pabrik saat 23:10. Satu melapor dan diwawancarai; yang satu tidak pernah melapor.',
   ],
   redHerrings: [
-    'P-1001 (Pak Hendra, direktur) masuk 23:02 tapi KELUAR 23:03. Alibi kuat: sudah pergi sebelum Victor tewas. Ia masuk lagi 23:16, setelah mayat ditemukan.',
+    'P-1003 (Irfan Maulana) masuk 23:05 tapi KELUAR 23:12. Alibi: ia langsung melapor ke pos dan diwawancarai penyidik pukul 23:20. Ia masuk lagi 23:16? Tidak, yang masuk 23:16 adalah P-1001.',
     'P-1006 masuk 23:15, setelah jam kematian. Mustahil jadi pelaku.',
   ],
 };
