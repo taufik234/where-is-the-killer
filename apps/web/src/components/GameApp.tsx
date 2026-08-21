@@ -1,34 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, Check, FileSearch, Lock, RotateCcw, Search } from 'lucide-react';
+import { 
+  BookOpen, Check, FileSearch, Lock, RotateCcw, 
+  Search, Zap, Database, ChevronRight, Terminal,
+  Trophy, Activity
+} from 'lucide-react';
 import { api, type EpisodeDetail, type EpisodeSummary, type QueryResponse, type SolveResponse } from '@/lib/api';
 import SqlEditor from './SqlEditor';
 import ResultTable from './ResultTable';
 import StoryPanel from './StoryPanel';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -36,6 +21,12 @@ const STATUS_LABEL = {
   solved: 'TERPECAHKAN',
   available: 'SIAP DIIKUTI',
   locked: 'TERKUNCI',
+} as const;
+
+const STATUS_COLORS = {
+  solved: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  available: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  locked: 'text-white/30 bg-white/5 border-white/10',
 } as const;
 
 const EPISODE_ICONS = [BookOpen, Search, Lock, Lock, Lock];
@@ -50,6 +41,7 @@ export default function GameApp() {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [verdictDialogOpen, setVerdictDialogOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const loadEpisode = useCallback(async (id: number) => {
     const detail = await api.episode(id);
@@ -136,197 +128,404 @@ export default function GameApp() {
   };
 
   const totalScore = episodes?.reduce((acc, e) => acc + (e.best_score ?? 0), 0) ?? 0;
-
   const solvedCount = episodes?.filter((e) => e.status === 'solved').length ?? 0;
   const totalCount = episodes?.length ?? 5;
 
   return (
-    <SidebarProvider defaultOpen>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <div className="flex items-center gap-2 px-2">
-            <span className="text-lg font-black tracking-tight">
-              <span className="text-primary">Query</span> Noir
-            </span>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Kasus</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
+    <div className="min-h-screen bg-[#0a0a0f] text-[#e8e4dc] relative overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]" 
+        style={{background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'}} />
+      
+      <div className="pointer-events-none fixed top-0 left-1/4 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px]" />
+      <div className="pointer-events-none fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-700/5 rounded-full blur-[120px]" />
+
+      <div className="flex h-screen">
+        <AnimatePresence mode="wait">
+          {sidebarOpen && (
+            <motion.aside 
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 288, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="flex-shrink-0 bg-[#0f0f14] border-r border-white/5 flex flex-col overflow-hidden"
+            >
+              <div className="p-5 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                    <Search className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-bold tracking-tight">
+                      <span className="text-amber-500">Query</span> Noir
+                    </h1>
+                    <p className="text-[10px] text-white/30 font-mono uppercase tracking-widest">Detective SQL</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <p className="px-3 text-[10px] font-mono uppercase tracking-[0.2em] text-white/30 mb-2">Kasus Aktif</p>
+                
                 {episodes?.map((ep, i) => {
                   const Icon = EPISODE_ICONS[i % EPISODE_ICONS.length];
+                  const isActive = episode?.id === ep.id;
+                  const isLocked = ep.status === 'locked';
+                  
                   return (
-                    <SidebarMenuItem key={ep.id}>
-                      <SidebarMenuButton
-                        isActive={episode?.id === ep.id}
-                        onClick={() => selectEpisode(ep.id)}
-                        disabled={ep.status === 'locked'}
-                        tooltip={ep.title}
-                      >
-                        <Icon />
-                        <span>Bab {ep.id}</span>
-                        <SidebarMenuBadge>
-                          {ep.status === 'solved' ? (
-                            <Check className="size-3.5 text-primary" />
-                          ) : ep.status === 'locked' ? (
-                            <Lock className="size-3.5 text-muted-foreground" />
-                          ) : null}
-                        </SidebarMenuBadge>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    <motion.button
+                      key={ep.id}
+                      whileHover={!isLocked ? { scale: 1.02 } : {}}
+                      whileTap={!isLocked ? { scale: 0.98 } : {}}
+                      onClick={() => !isLocked && selectEpisode(ep.id)}
+                      disabled={isLocked}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden group ${
+                        isActive 
+                          ? 'bg-amber-500/10 border border-amber-500/20' 
+                          : isLocked 
+                            ? 'opacity-40 cursor-not-allowed' 
+                            : 'hover:bg-white/[0.03] border border-transparent hover:border-white/5'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div 
+                          layoutId="active-indicator"
+                          className="absolute left-0 top-2 bottom-2 w-0.5 bg-amber-500 rounded-full" 
+                        />
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold ${
+                          isActive 
+                            ? 'bg-amber-500/20 text-amber-400' 
+                            : isLocked 
+                              ? 'bg-white/5 text-white/30' 
+                              : 'bg-white/5 text-white/50'
+                        }`}>
+                          {isLocked ? <Lock className="w-3 h-3" /> : <Icon className="w-3.5 h-3.5" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${isActive ? 'text-amber-100' : 'text-white/70'}`}>
+                            {ep.title}
+                          </p>
+                          <p className={`text-[10px] font-mono mt-0.5 ${isActive ? 'text-amber-400/60' : 'text-white/30'}`}>
+                            {STATUS_LABEL[ep.status]}
+                          </p>
+                        </div>
+                        {ep.status === 'solved' && (
+                          <Check className="w-4 h-4 text-emerald-500" />
+                        )}
+                      </div>
+                    </motion.button>
                   );
                 })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-          <SidebarSeparator />
-          <SidebarGroup>
-            <SidebarGroupLabel>Skor</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="px-3 py-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-mono font-semibold text-primary">{totalScore}</span>
-                </div>
-                <Progress value={(solvedCount / totalCount) * 100} className="mt-2" />
-                <p className="mt-1 font-mono text-[11px] text-foreground/60">
-                  {solvedCount}/{totalCount} kasus
-                </p>
               </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-          <div className="p-2">
-            <Button variant="outline" size="sm" className="w-full" onClick={() => location.reload()}>
-              <RotateCcw /> Mulai ulang
-            </Button>
-          </div>
-        </SidebarFooter>
-        <SidebarRail />
-      </Sidebar>
-      <SidebarInset>
-        <header className="flex items-center gap-2 border-b px-4 py-2">
-          <SidebarTrigger />
-        </header>
-        <main className="flex-1 p-6">
-          {error && !episode && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertTitle>Gagal memuat</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+
+              <div className="p-4 border-t border-white/5">
+                <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">Progress</span>
+                    <span className="text-xs font-mono text-amber-400">{solvedCount}/{totalCount}</span>
+                  </div>
+                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(solvedCount / totalCount) * 100}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="h-full bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.3)]" 
+                    />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-[10px] text-white/30 font-mono uppercase tracking-wider">Total Skor</span>
+                    <span className="text-lg font-mono font-bold text-amber-400">{totalScore}</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-3 border-white/10 bg-transparent hover:bg-white/5 text-white/50 hover:text-white/80 transition-all"
+                  onClick={() => location.reload()}
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-2" /> Mulai Ulang
+                </Button>
+              </div>
+            </motion.aside>
           )}
+        </AnimatePresence>
 
-          {episode ? (
-            <div className="flex flex-col gap-6">
-              <StoryPanel
-                title={episode.title}
-                focus={episode.focus}
-                statusLabel={STATUS_LABEL[episode.status]}
-                brief={episode.brief}
-                goal={episode.goal}
+        <main className="flex-1 overflow-y-auto relative">
+          <header className="sticky top-0 z-40 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/5 px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-lg hover:bg-white/5 transition-colors text-white/50"
               >
-                {episode.hints.length > 0 && (
-                  <div className="mt-2 md:mt-0 md:border-l md:border-border/60 md:pl-6">
-                    <p className="text-sm font-semibold text-foreground">Petunjuk</p>
-                    <ol className="mt-2 list-inside list-decimal space-y-1.5 text-sm leading-relaxed text-foreground/80">
-                      {episode.hints.map((h, i) => (
-                        <li key={i}>{h}</li>
-                      ))}
-                    </ol>
+                <Search className="w-4 h-4" />
+              </button>
+              <div className="h-4 w-px bg-white/10" />
+              {episode && (
+                <motion.span 
+                  key={episode.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-xs text-white/40 font-mono uppercase tracking-wider"
+                >
+                  Bab {String(episode.id).padStart(2, '0')} - {episode.focus}
+                </motion.span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] text-emerald-400/70 font-mono uppercase tracking-wider">Database Connected</span>
+            </div>
+          </header>
+
+          <div className="max-w-5xl mx-auto p-6 space-y-6">
+            <AnimatePresence mode="wait">
+              {error && !episode && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="rounded-xl border border-red-500/20 bg-red-500/5 p-4"
+                >
+                  <div className="flex items-center gap-2 text-red-400 mb-1">
+                    <Activity className="w-4 h-4" />
+                    <span className="text-sm font-semibold">Gagal memuat</span>
                   </div>
-                )}
-              </StoryPanel>
+                  <p className="text-sm text-red-400/70">{error}</p>
+                </motion.div>
+              )}
 
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-6 rounded-md border border-primary/20 bg-background/90 px-5 py-5">
-                  <SqlEditor value={sql} onChange={handleChange} onSubmit={runQuery} />
+              {episode ? (
+                <motion.div
+                  key={episode.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex flex-col gap-6"
+                >
+                  <StoryPanel
+                    title={episode.title}
+                    focus={episode.focus}
+                    statusLabel={STATUS_LABEL[episode.status]}
+                    statusColor={STATUS_COLORS[episode.status]}
+                    brief={episode.brief}
+                    goal={episode.goal}
+                  >
+                    {episode.hints.length > 0 && (
+                      <div className="mt-2 md:mt-0 md:border-l md:border-white/5 md:pl-6">
+                        <p className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <Zap className="w-3.5 h-3.5" /> Petunjuk
+                        </p>
+                        <ol className="space-y-2.5">
+                          {episode.hints.map((h, i) => (
+                            <motion.li 
+                              key={i}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="flex gap-3 text-sm text-white/60"
+                            >
+                              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-mono text-white/40">
+                                {i + 1}
+                              </span>
+                              <span className="leading-relaxed">{h}</span>
+                            </motion.li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </StoryPanel>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button onClick={runQuery} disabled={status === 'loading' || !sql.trim()} className="min-h-11">
-                      {status === 'loading' ? 'Menjalankan…' : 'Run Query'}
-                    </Button>
-                  </div>
+                  <div className="flex flex-col gap-6">
+                    <div className="rounded-2xl overflow-hidden border border-white/5 bg-[#0c0c12] shadow-2xl">
+                      <div className="px-4 py-2.5 bg-white/[0.02] border-b border-white/5 flex items-center gap-3">
+                        <div className="flex gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                        </div>
+                        <span className="text-[10px] font-mono text-white/30 uppercase tracking-wider">sql_editor.sql</span>
+                        <div className="flex-1" />
+                        <Terminal className="w-3.5 h-3.5 text-white/20" />
+                      </div>
+                      
+                      <SqlEditor value={sql} onChange={handleChange} onSubmit={runQuery} />
+                      
+                      <div className="px-4 py-2.5 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-white/30">
+                          <kbd className="px-1.5 py-0.5 rounded bg-white/5 text-white/50">Ctrl</kbd>
+                          {' + '}
+                          <kbd className="px-1.5 py-0.5 rounded bg-white/5 text-white/50">Enter</kbd>
+                          {' untuk eksekusi'}
+                        </span>
+                        <Button
+                          onClick={runQuery}
+                          disabled={status === 'loading' || !sql.trim()}
+                          className="px-4 py-1.5 h-auto rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-semibold transition-all duration-200 flex items-center gap-2 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {status === 'loading' ? (
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                              <Zap className="w-3.5 h-3.5" />
+                            </motion.div>
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
+                          {status === 'loading' ? 'Menjalankan...' : 'Run Query'}
+                        </Button>
+                      </div>
+                    </div>
 
-                  <Card className="gap-3 border border-primary/20 p-4 shadow-none">
-                    <CardContent className="flex flex-col gap-2 p-0">
-                      <label htmlFor="answer-input" className="text-sm font-semibold text-foreground">
-                        Tebak pelaku, tulis nama atau kode
-                      </label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Input
-                          id="answer-input"
-                          value={answer}
-                          onChange={(e) => { setAnswer(e.target.value); setSolve(null); }}
-                          onKeyDown={(e) => { if (e.key === 'Enter') submitAnswer(); }}
-                          placeholder="mis. Irfan Maulana atau P-1003"
-                          className="max-w-64 bg-background font-mono"
-                        />
+                    <motion.div 
+                      className="rounded-xl border border-white/5 bg-white/[0.02] p-5"
+                      whileHover={{ borderColor: 'rgba(255,255,255,0.08)' }}
+                    >
+                      <div className="flex flex-wrap items-end gap-4">
+                        <div className="flex-1 min-w-[200px]">
+                          <label className="block text-xs font-medium text-white/50 mb-2 uppercase tracking-wider flex items-center gap-2">
+                            <Trophy className="w-3.5 h-3.5" /> Tebak Pelaku
+                          </label>
+                          <Input
+                            value={answer}
+                            onChange={(e) => { setAnswer(e.target.value); setSolve(null); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') submitAnswer(); }}
+                            placeholder="mis. Irfan Maulana atau P-1003"
+                            className="w-full bg-[#0c0c12] border-white/10 rounded-lg px-4 py-2.5 text-sm font-mono text-white/90 placeholder:text-white/20 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all"
+                          />
+                        </div>
                         <Button
                           onClick={submitAnswer}
                           disabled={status === 'loading' || !answer.trim()}
                           variant="outline"
-                          className="min-h-11"
+                          className="px-6 py-2.5 h-auto rounded-lg border-white/10 bg-transparent hover:border-amber-500/30 hover:bg-amber-500/5 text-white/70 hover:text-amber-400 text-sm font-medium transition-all duration-200 disabled:opacity-50"
                         >
                           Tebak Pelaku
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </motion.div>
+
+                    <AnimatePresence>
+                      {error && episode && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 overflow-hidden"
+                        >
+                          <div className="flex items-center gap-2 text-red-400 mb-1">
+                            <Database className="w-4 h-4" />
+                            <span className="text-sm font-semibold">Query Error</span>
+                          </div>
+                          <p className="text-sm text-red-400/70 font-mono">{error}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                      {solve && !solve.correct && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"
+                        >
+                          <div className="flex items-center gap-2 text-amber-400 mb-1">
+                            <Search className="w-4 h-4" />
+                            <span className="text-sm font-semibold">Belum Benar</span>
+                          </div>
+                          <p className="text-sm text-amber-400/70">{solve.message}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <ResultTable 
+                      columns={query?.columns ?? []} 
+                      rows={query?.rows ?? []} 
+                      isLoading={status === 'loading'} 
+                    />
+                    
+                    {query?.truncated && (
+                      <motion.p 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-xs text-amber-500/60 font-mono flex items-center gap-1.5"
+                      >
+                        <Zap className="w-3 h-3" />
+                        Hasil dibatasi 500 baris. Persempit query kamu.
+                      </motion.p>
+                    )}
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="flex items-center justify-center h-64">
+                  <motion.div 
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="flex items-center gap-3 text-white/30"
+                  >
+                    <Database className="w-5 h-5 animate-pulse" />
+                    <span className="text-sm font-mono">Memuat kasus...</span>
+                  </motion.div>
                 </div>
-
-                {error && episode && (
-                  <Alert variant="destructive">
-                    <AlertTitle>Query error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                {solve && !solve.correct && (
-                  <Card className="gap-3 border-amber-500/40 p-4 shadow-none animate-rise-in">
-                    <CardContent className="flex flex-col gap-1 p-0">
-                      <Badge variant="outline" className="w-fit text-amber-500">Belum benar</Badge>
-                      <p className="text-sm text-foreground/80">{solve.message}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <ResultTable columns={query?.columns ?? []} rows={query?.rows ?? []} isLoading={status === 'loading'} />
-                {query?.truncated && (
-                  <p className="text-xs text-amber-500/80">Hasil dibatasi 500 baris. Persempit query kamu.</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Memuat kasus…</p>
-          )}
+              )}
+            </AnimatePresence>
+          </div>
         </main>
-      </SidebarInset>
+      </div>
 
       <Dialog open={verdictDialogOpen} onOpenChange={setVerdictDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-[#0f0f14] border-white/10 text-[#e8e4dc] max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-primary">
-              <FileSearch /> Kasus terpecahkan
+            <DialogTitle className="flex items-center gap-3 text-amber-400 text-xl">
+              <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <FileSearch className="w-5 h-5" />
+              </div>
+              Kasus Terpecahkan
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-white/60 leading-relaxed">
               {solve?.message}
             </DialogDescription>
           </DialogHeader>
+          
           {solve?.score !== undefined && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3 font-mono text-sm">
-              <span className="text-muted-foreground">query {String(solve.breakdown?.queryCount ?? 0).padStart(2, '0')}</span>
-              <span className="text-muted-foreground">salah {String(solve.breakdown?.wrongAttempts ?? 0).padStart(2, '0')}</span>
-              <span className="font-semibold text-primary">skor {solve.score}</span>
+            <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-[10px] font-mono text-white/30 uppercase tracking-wider mb-1">Query</p>
+                  <p className="text-lg font-mono font-bold text-amber-400">
+                    {String(solve.breakdown?.queryCount ?? 0).padStart(2, '0')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono text-white/30 uppercase tracking-wider mb-1">Salah</p>
+                  <p className="text-lg font-mono font-bold text-red-400">
+                    {String(solve.breakdown?.wrongAttempts ?? 0).padStart(2, '0')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono text-white/30 uppercase tracking-wider mb-1">Skor</p>
+                  <p className="text-lg font-mono font-bold text-emerald-400">{solve.score}</p>
+                </div>
+              </div>
             </div>
           )}
+          
           {solve?.verdict && (
-            <p className="border-t pt-3 text-sm leading-relaxed text-foreground/80">{solve.verdict}</p>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="border-t border-white/5 pt-4 text-sm leading-relaxed text-white/60 italic"
+              style={{ fontFamily: 'Georgia, serif' }}
+            >
+              "{solve.verdict}"
+            </motion.p>
           )}
         </DialogContent>
       </Dialog>
-    </SidebarProvider>
+    </div>
   );
 }
