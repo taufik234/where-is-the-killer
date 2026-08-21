@@ -1,10 +1,557 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import GameApp from '../components/GameApp.jsx';
-import '../styles/global.css';
+// Landing page Query Noir - standalone tanpa Layout agar palet dan efek CRT tidak bentrok dengan game
 ---
-<Layout title="Query Noir - SQL Detective Game">
-  <main id="app-root" class="min-h-[100dvh] bg-surface-0 text-ink">
-    <GameApp client:load />
-  </main>
-</Layout>
+<!doctype html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Query Noir - Pecahkan kejahatan dengan query SQL. Interogasi database bukti, tulis SQL sungguhan di SQLite, temukan pelaku." />
+  <title>Query Noir - Forensic Database Investigation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'monospace'],
+            display: ['Space Grotesk', 'sans-serif'],
+          },
+          colors: {
+            noir: {
+              950: '#030305',
+              900: '#0a0a0f',
+              800: '#13131f',
+              700: '#1c1c2e',
+              600: '#252540',
+            },
+            toxic: {
+              400: '#00ff88',
+              500: '#00cc6a',
+              glow: 'rgba(0,255,136,0.15)',
+            },
+            alert: {
+              400: '#ff3366',
+              glow: 'rgba(255,51,102,0.2)',
+            }
+          },
+          animation: {
+            'blink': 'blink 1s step-end infinite',
+            'scan': 'scan 8s linear infinite',
+            'flicker': 'flicker 4s infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            blink: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0' },
+            },
+            scan: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(100vh)' },
+            },
+            flicker: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.95' },
+              '52%': { opacity: '0.5' },
+              '54%': { opacity: '0.95' },
+              '90%': { opacity: '1' },
+              '92%': { opacity: '0.8' },
+              '94%': { opacity: '1' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --toxic: #00ff88;
+      --alert: #ff3366;
+      --bg: #030305;
+    }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: #a0a0b0;
+      overflow-x: hidden;
+    }
+    .crt::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+      pointer-events: none;
+      z-index: 9999;
+    }
+    .crt::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+      pointer-events: none;
+      z-index: 9998;
+    }
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(180deg, transparent, rgba(0,255,136,0.08), transparent);
+      z-index: 9997;
+      pointer-events: none;
+    }
+    .noise {
+      position: fixed;
+      inset: 0;
+      opacity: 0.03;
+      z-index: 9996;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+    .glitch { position: relative; }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+    }
+    .glitch::before {
+      animation: glitch-1 3s infinite linear alternate-reverse;
+      color: var(--alert); z-index: -1;
+      clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+    }
+    .glitch::after {
+      animation: glitch-2 2s infinite linear alternate-reverse;
+      color: var(--toxic); z-index: -2;
+      clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+    }
+    @keyframes glitch-1 {
+      0%, 90%, 100% { transform: translate(0); }
+      92% { transform: translate(-3px, 1px); }
+      94% { transform: translate(3px, -1px); }
+      96% { transform: translate(-2px, 2px); }
+    }
+    @keyframes glitch-2 {
+      0%, 90%, 100% { transform: translate(0); }
+      91% { transform: translate(2px, -1px); }
+      93% { transform: translate(-2px, 1px); }
+      95% { transform: translate(3px, -2px); }
+    }
+    .cursor-blink::after {
+      content: "█";
+      animation: blink 1s step-end infinite;
+      color: var(--toxic);
+      margin-left: 2px;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0f; }
+    ::-webkit-scrollbar-thumb { background: #1c1c2e; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--toxic); }
+    .glow-text { text-shadow: 0 0 10px rgba(0,255,136,0.3), 0 0 40px rgba(0,255,136,0.1); }
+    .glow-border { box-shadow: 0 0 20px rgba(0,255,136,0.1), inset 0 0 20px rgba(0,255,136,0.05); }
+    .glow-border-hover:hover { box-shadow: 0 0 30px rgba(0,255,136,0.2), inset 0 0 30px rgba(0,255,136,0.1); border-color: var(--toxic); }
+    .tilt-card { transform-style: preserve-3d; transition: transform 0.1s ease; }
+    #matrix-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.15; pointer-events: none; }
+    .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+    .reveal.active { opacity: 1; transform: translateY(0); }
+    .stagger-children > *:nth-child(1) { transition-delay: 0.1s; }
+    .stagger-children > *:nth-child(2) { transition-delay: 0.2s; }
+    .stagger-children > *:nth-child(3) { transition-delay: 0.3s; }
+    .stagger-children > *:nth-child(4) { transition-delay: 0.4s; }
+    @keyframes typing { from { width: 0 } to { width: 100% } }
+    @keyframes blink-caret { 50% { border-color: transparent } }
+    .hex-bg {
+      background-color: #030305;
+      background-image: linear-gradient(30deg, #0f0f1a 12%, transparent 12.5%, transparent 87%, #0f0f1a 87.5%, #0f0f1a),
+        linear-gradient(150deg, #0f0f1a 12%, transparent 12.5%, transparent 87%, #0f0f1a 87.5%, #0f0f1a),
+        linear-gradient(30deg, #0f0f1a 12%, transparent 12.5%, transparent 87%, #0f0f1a 87.5%, #0f0f1a),
+        linear-gradient(150deg, #0f0f1a 12%, transparent 12.5%, transparent 87%, #0f0f1a 87.5%, #0f0f1a),
+        linear-gradient(60deg, #0a0a14 25%, transparent 25.5%, transparent 75%, #0a0a14 75%, #0a0a14),
+        linear-gradient(60deg, #0a0a14 25%, transparent 25.5%, transparent 75%, #0a0a14 75%, #0a0a14);
+      background-size: 40px 70px;
+      background-position: 0 0, 0 0, 20px 35px, 20px 35px, 0 0, 20px 35px;
+    }
+    .border-gradient { position: relative; background: #0a0a0f; border-radius: 12px; }
+    .border-gradient::before {
+      content: ""; position: absolute; inset: -1px; border-radius: 13px;
+      background: linear-gradient(135deg, transparent 40%, rgba(0,255,136,0.3) 50%, transparent 60%);
+      background-size: 300% 300%; animation: border-shine 4s ease infinite; z-index: -1;
+    }
+    @keyframes border-shine { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .terminal-window { background: rgba(10,10,15,0.95); backdrop-filter: blur(20px); border: 1px solid rgba(0,255,136,0.15); }
+    .btn-ripple { position: relative; overflow: hidden; }
+    .btn-ripple::after {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+      transform: scale(0); opacity: 0; transition: transform 0.5s, opacity 0.5s;
+    }
+    .btn-ripple:active::after { transform: scale(2); opacity: 1; transition: 0s; }
+    .data-stream { font-size: 10px; line-height: 1.4; color: rgba(0,255,136,0.08); user-select: none; pointer-events: none; }
+  </style>
+</head>
+<body class="crt hex-bg">
+  <div class="noise"></div>
+  <div class="scanline animate-scan"></div>
+  <canvas id="matrix-canvas"></canvas>
+
+  <nav class="fixed w-full z-50 border-b border-noir-700/50 backdrop-blur-xl bg-noir-950/60">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="/" class="text-lg font-bold font-display text-white flex items-center gap-3 group">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-toxic-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-toxic-400"></span>
+        </span>
+        <span class="tracking-wider group-hover:glow-text transition-all duration-300">QUERY_NOIR</span>
+        <span class="text-[10px] text-toxic-400/60 border border-toxic-400/30 px-1.5 py-0.5 rounded font-mono">v2.0.1</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-xs tracking-widest uppercase">
+        <a href="#features" class="text-gray-500 hover:text-toxic-400 transition-colors duration-300 relative group">
+          Mekanik
+          <span class="absolute -bottom-1 left-0 w-0 h-px bg-toxic-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        <a href="#story" class="text-gray-500 hover:text-toxic-400 transition-colors duration-300 relative group">
+          Cerita
+          <span class="absolute -bottom-1 left-0 w-0 h-px bg-toxic-400 group-hover:w-full transition-all duration-300"></span>
+        </a>
+        <a href="/play" class="px-5 py-2 bg-toxic-400 text-noir-950 font-bold text-xs rounded hover:bg-toxic-500 transition-all duration-300 btn-ripple shadow-lg shadow-toxic-400/20 hover:shadow-toxic-400/40">
+          Mainkan Beta
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+    <div class="relative z-10 max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+      <div class="space-y-8">
+        <div class="inline-flex items-center gap-3 px-4 py-2 bg-noir-800/80 border border-toxic-400/20 rounded-full text-[11px] text-toxic-400 tracking-widest uppercase backdrop-blur-sm">
+          <span class="w-1.5 h-1.5 bg-toxic-400 rounded-full animate-pulse"></span>
+          <span id="case-typing">Kasus Baru: File #001</span>
+        </div>
+        <h1 class="text-5xl md:text-7xl font-extrabold text-white leading-[0.95] font-display tracking-tight">
+          <span class="block reveal">Pecahkan</span>
+          <span class="block reveal text-toxic-400 glitch glow-text" data-text="Kejahatan">Kejahatan</span>
+          <span class="block reveal text-gray-500 text-3xl md:text-4xl mt-2 font-mono font-light">
+            dengan <span class="text-white">Query SQL</span><span class="cursor-blink"></span>
+          </span>
+        </h1>
+        <p class="text-base text-gray-500 leading-relaxed max-w-lg reveal border-l-2 border-toxic-400/30 pl-4">
+          Bukti bukan ada di lokasi kejadian, tapi tersembunyi di dalam log database.
+          Anda adalah <span class="text-toxic-400">Analis Forensik</span>. Tulis, eksekusi, dan temukan siapa pembunuhnya.
+        </p>
+        <div class="flex flex-wrap gap-4 reveal">
+          <a href="/play" class="px-8 py-4 bg-toxic-400 text-noir-950 font-bold rounded-lg hover:bg-toxic-500 transition-all duration-300 transform hover:scale-105 shadow-xl shadow-toxic-400/20 hover:shadow-toxic-400/40 btn-ripple flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Mulai Investigasi
+          </a>
+          <a href="#features" class="px-8 py-4 border border-noir-600 text-gray-400 font-bold rounded-lg hover:border-toxic-400 hover:text-toxic-400 transition-all duration-300 hover:glow-border flex items-center gap-2 group">
+            <span class="group-hover:translate-x-1 transition-transform">&gt;</span>
+            Pelajari Cara Main
+          </a>
+        </div>
+        <div class="flex gap-8 pt-4 reveal">
+          <div>
+            <div class="text-2xl font-bold text-white font-display">5</div>
+            <div class="text-[10px] text-gray-600 uppercase tracking-widest">Episode</div>
+          </div>
+          <div class="w-px bg-noir-700"></div>
+          <div>
+            <div class="text-2xl font-bold text-white font-display">10K+</div>
+            <div class="text-[10px] text-gray-600 uppercase tracking-widest">Data Rows</div>
+          </div>
+          <div class="w-px bg-noir-700"></div>
+          <div>
+            <div class="text-2xl font-bold text-alert-400 font-display">∞</div>
+            <div class="text-[10px] text-gray-600 uppercase tracking-widest">Kemungkinan Query</div>
+          </div>
+        </div>
+      </div>
+      <div class="relative animate-float reveal">
+        <div class="absolute -inset-4 bg-toxic-400/10 rounded-2xl blur-2xl"></div>
+        <div class="absolute -inset-1 bg-gradient-to-r from-toxic-400/20 via-transparent to-alert-400/20 rounded-xl blur-xl opacity-50"></div>
+        <div class="relative terminal-window rounded-xl shadow-2xl overflow-hidden glow-border">
+          <div class="bg-noir-800/90 px-5 py-3 flex items-center gap-3 border-b border-noir-700/50">
+            <div class="flex gap-2">
+              <div class="w-3 h-3 rounded-full bg-alert-400/80 hover:bg-alert-400 transition-colors cursor-pointer"></div>
+              <div class="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 transition-colors cursor-pointer"></div>
+              <div class="w-3 h-3 rounded-full bg-toxic-400/80 hover:bg-toxic-400 transition-colors cursor-pointer"></div>
+            </div>
+            <div class="flex-1 text-center">
+              <span class="text-[10px] text-gray-600 font-mono tracking-wider">forensic_terminal - query_noir.exe</span>
+            </div>
+            <div class="text-[10px] text-gray-700">●●●</div>
+          </div>
+          <div class="p-6 text-sm leading-relaxed font-mono space-y-1 bg-noir-950/50">
+            <div class="text-gray-600 text-[10px] mb-3">-- SESSION STARTED: 2026-08-21 03:00:14 --</div>
+            <p class="text-gray-600">-- Cari siapa yang masuk malam itu</p>
+            <p><span class="text-purple-400">SELECT</span> <span class="text-cyan-300">name</span>, <span class="text-cyan-300">role</span>, <span class="text-cyan-300">entry_time</span></p>
+            <p><span class="text-purple-400">FROM</span> <span class="text-yellow-300">employees</span></p>
+            <p><span class="text-purple-400">JOIN</span> <span class="text-yellow-300">access_logs</span> <span class="text-purple-400">ON</span> <span class="text-cyan-300">employees.id</span> = <span class="text-cyan-300">access_logs.emp_id</span></p>
+            <p><span class="text-purple-400">WHERE</span> <span class="text-cyan-300">entry_time</span> <span class="text-toxic-400">BETWEEN</span> <span class="text-orange-300">'23:00:00'</span> <span class="text-toxic-400">AND</span> <span class="text-orange-300">'04:00:00'</span></p>
+            <p><span class="text-purple-400">ORDER BY</span> <span class="text-cyan-300">entry_time</span> <span class="text-toxic-400">DESC</span>;</p>
+            <div class="mt-4 pt-4 border-t border-noir-700/50 space-y-2">
+              <div class="flex items-center gap-2 text-toxic-400 text-xs">
+                <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                <span class="animate-pulse">Executing query...</span>
+              </div>
+              <div class="text-[10px] text-gray-500 space-y-1">
+                <div class="flex justify-between border-b border-noir-800 pb-1">
+                  <span class="text-gray-400">name</span>
+                  <span class="text-gray-400">role</span>
+                  <span class="text-gray-400">entry_time</span>
+                </div>
+                <div class="flex justify-between text-toxic-400/70">
+                  <span>A. Wijaya</span>
+                  <span>SysAdmin</span>
+                  <span>02:14:33</span>
+                </div>
+                <div class="flex justify-between text-gray-500">
+                  <span>D. Santoso</span>
+                  <span>Security</span>
+                  <span>23:45:12</span>
+                </div>
+                <div class="flex justify-between text-alert-400/70">
+                  <span>R. Hermawan</span>
+                  <span>DevOps</span>
+                  <span>01:02:09</span>
+                </div>
+              </div>
+              <div class="text-[10px] text-gray-600 pt-1">3 rows returned. Execution time: 0.004s</div>
+            </div>
+          </div>
+        </div>
+        <div class="absolute -right-8 top-1/4 data-stream hidden md:block">
+          <div class="animate-pulse-slow">0x4F2A</div>
+          <div class="animate-pulse">0x8B1C</div>
+          <div class="animate-pulse-slow">0x3E9D</div>
+        </div>
+        <div class="absolute -left-6 bottom-1/4 data-stream hidden md:block">
+          <div class="animate-pulse">SELECT *</div>
+          <div class="animate-pulse-slow">FROM evidence</div>
+          <div class="animate-pulse">WHERE clue=1</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="py-32 relative">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-20 space-y-4">
+        <div class="reveal inline-block">
+          <span class="text-[10px] text-toxic-400/60 border border-toxic-400/20 px-3 py-1 rounded-full tracking-widest uppercase">Sistem Investigasi</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-bold text-white font-display reveal">Bukan Game Tebak-tebakan</h2>
+        <p class="text-gray-500 max-w-xl mx-auto reveal">Gunakan logika dan syntax SQL sungguhan untuk menyaring ribuan data dan mengungkap kebenaran.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 stagger-children">
+        <div class="tilt-card group relative bg-noir-900/60 border border-noir-700/50 p-8 rounded-xl hover:border-toxic-400/40 transition-all duration-500 glow-border-hover backdrop-blur-sm reveal" data-tilt>
+          <div class="absolute inset-0 bg-gradient-to-br from-toxic-400/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative z-10">
+            <div class="w-12 h-12 rounded-lg bg-noir-800 border border-noir-600 flex items-center justify-center mb-6 group-hover:border-toxic-400/30 transition-colors duration-300">
+              <span class="text-toxic-400 font-mono text-lg font-bold">{ }</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3 font-display">Eksekusi Sungguhan</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Terhubung ke database SQLite lokal. Setiap query diproses layaknya aplikasi backend sungguhan. Tidak ada jawaban baku, hanya data yang berbicara.</p>
+            <div class="mt-6 flex items-center gap-2 text-[10px] text-toxic-400/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <span class="w-4 h-px bg-toxic-400/40"></span>
+              <span>SQLite Engine v3.42</span>
+            </div>
+          </div>
+        </div>
+        <div class="tilt-card group relative bg-noir-900/60 border border-noir-700/50 p-8 rounded-xl hover:border-alert-400/40 transition-all duration-500 glow-border-hover backdrop-blur-sm reveal" data-tilt>
+          <div class="absolute inset-0 bg-gradient-to-br from-alert-400/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative z-10">
+            <div class="w-12 h-12 rounded-lg bg-noir-800 border border-noir-600 flex items-center justify-center mb-6 group-hover:border-alert-400/30 transition-colors duration-300">
+              <span class="text-alert-400 font-mono text-lg font-bold">?!</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3 font-display">Red Herrings</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Ratusan karyawan, log akses yang saling bertabrakan, dan transaksi keuangan palsu. Harus pintar memfilter data agar tidak terjebak oleh bukti palsu.</p>
+            <div class="mt-6 flex items-center gap-2 text-[10px] text-alert-400/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <span class="w-4 h-px bg-alert-400/40"></span>
+              <span>47% data adalah distraksi</span>
+            </div>
+          </div>
+        </div>
+        <div class="tilt-card group relative bg-noir-900/60 border border-noir-700/50 p-8 rounded-xl hover:border-purple-400/40 transition-all duration-500 glow-border-hover backdrop-blur-sm reveal" data-tilt>
+          <div class="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative z-10">
+            <div class="w-12 h-12 rounded-lg bg-noir-800 border border-noir-600 flex items-center justify-center mb-6 group-hover:border-purple-400/30 transition-colors duration-300">
+              <span class="text-purple-400 font-mono text-lg font-bold">&lt;/&gt;</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3 font-display">Story Driven</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Cerita bercabang dengan 5 episode penuh twist. Semakin dalam Anda query, semakin kelam rahasianya. Setiap keputusan mengubah narasi.</p>
+            <div class="mt-6 flex items-center gap-2 text-[10px] text-purple-400/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <span class="w-4 h-px bg-purple-400/40"></span>
+              <span>12 endings tersembunyi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="story" class="py-32 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-alert-400/3 to-transparent"></div>
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+      <div class="reveal space-y-8">
+        <div class="inline-flex items-center gap-2 text-[10px] text-alert-400/60 border border-alert-400/20 px-3 py-1 rounded-full tracking-widest uppercase">
+          <span class="w-1 h-1 bg-alert-400 rounded-full animate-pulse"></span>
+          Kasus 001: Kecelakaan atau Pembunuhan?
+        </div>
+        <blockquote class="relative">
+          <div class="absolute -top-8 -left-4 text-8xl text-toxic-400/10 font-display select-none">"</div>
+          <p class="text-xl md:text-3xl text-gray-300 italic leading-relaxed font-display relative z-10">
+            Korban tewas di ruang server pukul 03:00. Pintu terkunci dari dalam. Satu-satunya petunjuk adalah log anomali di database perusahaan.
+            <span class="text-alert-400">Polisi kebingungan.</span> Merekalah memanggilmu.
+          </p>
+          <div class="absolute -bottom-4 -right-4 text-8xl text-toxic-400/10 font-display select-none">"</div>
+        </blockquote>
+        <div class="pt-8 flex justify-center gap-4">
+          <div class="h-px w-16 bg-gradient-to-r from-transparent to-toxic-400/30"></div>
+          <div class="h-px w-16 bg-gradient-to-l from-transparent to-toxic-400/30"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-32 border-y border-noir-700/30 relative">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="reveal space-y-6">
+          <h2 class="text-3xl md:text-4xl font-bold text-white font-display">Setiap <span class="text-toxic-400">Byte</span> adalah Bukti</h2>
+          <p class="text-gray-500 leading-relaxed">Database tidak berbohong. Tapi data bisa disembunyikan, dienkripsi, atau sengaja dikacaukan. Gunakan <span class="text-toxic-400">JOIN</span>, <span class="text-toxic-400">SUBQUERY</span>, dan <span class="text-toxic-400">WINDOW FUNCTIONS</span> untuk mengungkap apa yang sebenarnya terjadi di balik layar.</p>
+          <div class="space-y-3 pt-4">
+            <div class="flex items-center gap-3 text-sm text-gray-400"><span class="w-1.5 h-1.5 bg-toxic-400 rounded-full"></span><span>Export hasil query ke evidence board</span></div>
+            <div class="flex items-center gap-3 text-sm text-gray-400"><span class="w-1.5 h-1.5 bg-toxic-400 rounded-full"></span><span>Cross-reference antar tabel untuk memvalidasi alibi</span></div>
+            <div class="flex items-center gap-3 text-sm text-gray-400"><span class="w-1.5 h-1.5 bg-toxic-400 rounded-full"></span><span>Temukan anomaly dengan aggregate functions</span></div>
+          </div>
+        </div>
+        <div class="reveal relative">
+          <div class="border-gradient p-6">
+            <div class="space-y-4 font-mono text-xs">
+              <div class="flex items-center justify-between text-gray-600 border-b border-noir-700/50 pb-2"><span>evidence_board.sql</span><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 bg-toxic-400 rounded-full animate-pulse"></span> LIVE</span></div>
+              <div class="space-y-1 text-gray-400">
+                <p><span class="text-purple-400">WITH</span> <span class="text-cyan-300">suspects</span> <span class="text-purple-400">AS</span> (</p>
+                <p class="pl-4"><span class="text-purple-400">SELECT</span> <span class="text-cyan-300">emp_id</span>, <span class="text-yellow-300">COUNT</span>(*) <span class="text-purple-400">as</span> <span class="text-cyan-300">access_count</span></p>
+                <p class="pl-4"><span class="text-purple-400">FROM</span> <span class="text-yellow-300">access_logs</span></p>
+                <p class="pl-4"><span class="text-purple-400">WHERE</span> <span class="text-cyan-300">timestamp</span> <span class="text-purple-400">BETWEEN</span> <span class="text-orange-300">'2026-08-20'</span> <span class="text-purple-400">AND</span> <span class="text-orange-300">'2026-08-21'</span></p>
+                <p class="pl-4"><span class="text-purple-400">GROUP BY</span> <span class="text-cyan-300">emp_id</span></p>
+                <p class="pl-4"><span class="text-purple-400">HAVING</span> <span class="text-cyan-300">access_count</span> > <span class="text-orange-300">5</span></p>
+                <p>)</p>
+                <p><span class="text-purple-400">SELECT</span> <span class="text-cyan-300">e.name</span>, <span class="text-cyan-300">s.access_count</span>, <span class="text-cyan-300">e.clearance_level</span></p>
+                <p><span class="text-purple-400">FROM</span> <span class="text-yellow-300">suspects</span> <span class="text-cyan-300">s</span></p>
+                <p><span class="text-purple-400">JOIN</span> <span class="text-yellow-300">employees</span> <span class="text-cyan-300">e</span> <span class="text-purple-400">ON</span> <span class="text-cyan-300">s.emp_id</span> = <span class="text-cyan-300">e.id</span></p>
+                <p><span class="text-purple-400">ORDER BY</span> <span class="text-cyan-300">s.access_count</span> <span class="text-purple-400">DESC</span>;</p>
+              </div>
+              <div class="pt-4 border-t border-noir-700/50 flex items-center gap-2"><span class="text-toxic-400">$</span><span class="text-gray-500 animate-pulse">_</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-32 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-t from-toxic-400/5 via-transparent to-transparent"></div>
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 space-y-8">
+      <div class="reveal">
+        <h2 class="text-4xl md:text-6xl font-extrabold text-white font-display leading-tight">Siap Menulis<br><span class="text-toxic-400 glitch glow-text" data-text="Query Pertamamu?">Query Pertamamu?</span></h2>
+      </div>
+      <p class="text-gray-400 text-lg max-w-lg mx-auto reveal">Buka terminal Anda. Analisis buktinya. Temukan pelakunya. Keberanian untuk meng-query kebenaran dimulai dari sini.</p>
+      <div class="reveal pt-4">
+        <a href="/play" class="inline-flex items-center gap-3 px-10 py-5 bg-toxic-400 text-noir-950 font-bold rounded-lg hover:bg-toxic-500 transition-all duration-300 transform hover:scale-105 shadow-2xl shadow-toxic-400/30 hover:shadow-toxic-400/50 btn-ripple text-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Main ke Terminal
+        </a>
+        <p class="mt-4 text-[10px] text-gray-600 tracking-widest uppercase">Astro + SQLite + Tailwind</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-12 border-t border-noir-700/30 relative">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="flex items-center gap-3"><span class="text-toxic-400 font-mono font-bold">&gt;_</span><span class="text-gray-500 text-sm">Query Noir. Built with obsession.</span></div>
+      <div class="flex gap-8 text-xs text-gray-600 tracking-widest uppercase">
+        <a href="https://github.com/taufik234/where-is-the-killer" target="_blank" rel="noreferrer" class="hover:text-toxic-400 transition-colors duration-300">GitHub</a>
+        <a href="/play" class="hover:text-toxic-400 transition-colors duration-300">Play</a>
+        <a href="https://github.com/taufik234/where-is-the-killer#readme" target="_blank" rel="noreferrer" class="hover:text-toxic-400 transition-colors duration-300">Docs</a>
+      </div>
+    </div>
+    <div class="text-center mt-8 text-[10px] text-gray-700 font-mono">SYSTEM_STATUS: <span class="text-toxic-400">ONLINE</span> // UPTIME: 99.97% // LAST_COMMIT: 2h ago</div>
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+    for (let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(3, 3, 5, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 255, 136, 0.15)';
+      ctx.font = fontSize + 'px JetBrains Mono';
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }
+    setInterval(drawMatrix, 50);
+    const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
+    }, observerOptions);
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    document.querySelectorAll('[data-tilt]').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+        const centerX = rect.width / 2; const centerY = rect.height / 2;
+        const rotateX = (y - centerY) / 20; const rotateY = (centerX - x) / 20;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      });
+      card.addEventListener('mouseleave', () => { card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)'; });
+    });
+    const caseText = "Kasus Baru: File #001";
+    const caseElement = document.getElementById('case-typing');
+    let caseIndex = 0;
+    function typeCase() {
+      if (caseIndex < caseText.length) {
+        caseElement.textContent = caseText.substring(0, caseIndex + 1);
+        caseIndex++;
+        setTimeout(typeCase, 80 + Math.random() * 50);
+      }
+    }
+    setTimeout(typeCase, 1000);
+    setInterval(() => {
+      const glitches = document.querySelectorAll('.glitch');
+      const random = glitches[Math.floor(Math.random() * glitches.length)];
+      if (!random) return;
+      random.style.animation = 'none';
+      setTimeout(() => { random.style.animation = ''; }, 100);
+    }, 5000);
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>

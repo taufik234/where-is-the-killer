@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GameApp from '../components/GameApp.jsx';
+import '../styles/global.css';
+---
+<Layout title="Query Noir - Play">
+  <main id="app-root" class="min-h-[100dvh] bg-surface-0 text-ink">
+    <GameApp client:load />
+  </main>
+</Layout>
