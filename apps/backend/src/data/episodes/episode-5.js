@@ -1,4 +1,4 @@
-// Bab 5: Konfrontasi — Fokus: Complex Queries.
+// Bab 5: Konfrontasi Fokus: Complex Queries.
 // Semua bukti sudah di tangan. Kini gabungkan: siapa yang ada di dalam pabrik,
 // menelepon korban, mendapat aliran uang fiktif, dan mengirim ancaman. Satu
 // orang memenuhi SEMUA kriteria. Gunakan kombinasi JOIN, subquery, dan agregasi.
@@ -101,7 +101,7 @@ export const episode5 = {
     'Pelaku harus muncul di keempat hasil. Periksa siapa yang konsisten di semua tabel.',
   ],
   redHerrings: [
-    'P-1005 (Siti) — status COD dan ancaman, tapi tidak pernah menelepon korban, dan hanya pemilik CV yang tak terlibat.',
-    'P-1001 (Hendra) — direktur yang sibuk, tapi tidak ada sangkut paut dengan ancaman.',
+    'P-1005 (Siti) status COD dan ancaman, tapi tidak pernah menelepon korban, dan hanya pemilik CV yang tak terlibat.',
+    'P-1001 (Hendra) direktur yang sibuk, tapi tidak ada sangkut paut dengan ancaman.',
   ],
 };

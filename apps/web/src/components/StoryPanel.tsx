@@ -15,24 +15,19 @@ export default function StoryPanel({ title, focus, statusLabel, brief, goal, chi
   return (
     <Card className="gap-4 border-white/10">
       <CardHeader className="gap-2">
-        <Badge variant="secondary" className="w-fit font-mono text-[10px] uppercase tracking-[0.18em]">
+        <Badge variant="secondary" className="w-fit font-mono uppercase tracking-[0.18em]">
           {focus}
         </Badge>
         <CardTitle className="text-xl leading-tight">{title}</CardTitle>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          {statusLabel}
-        </span>
+        <span className="text-xs font-medium text-muted-foreground">{statusLabel}</span>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-4 md:grid-cols-2">
+      <CardContent className="flex flex-col gap-4 p-0 md:px-6">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8">
           <div className="flex flex-col gap-4">
-            <div>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ringkasan</p>
-              <p className="mt-1 text-sm leading-relaxed text-foreground/80">{brief}</p>
-            </div>
-            <div className="rounded-md border bg-muted/30 p-4">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tujuan</p>
-              <p className="mt-1 text-sm leading-relaxed text-foreground/90">{goal}</p>
+            <p className="text-sm leading-relaxed text-foreground/80">{brief}</p>
+            <div className="rounded-md bg-muted/30 p-4">
+              <p className="text-sm font-semibold text-foreground">Tujuan</p>
+              <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{goal}</p>
             </div>
           </div>
           <div>{children}</div>

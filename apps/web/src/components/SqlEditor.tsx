@@ -21,11 +21,11 @@ export default function SqlEditor({ value, onChange, onSubmit }: SqlEditorProps)
         }}
         spellCheck={false}
         placeholder={`-- tulis query bukti di sini\nSELECT * FROM ...`}
-        className="min-h-32 bg-background font-mono text-sm text-primary caret-primary placeholder:text-slate-600"
+        className="min-h-32 bg-background font-mono text-sm text-primary caret-primary placeholder:text-muted-foreground/60"
         rows={7}
       />
-      <p className="text-xs text-muted-foreground">
-        jalankan: <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">Ctrl</kbd>+<kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd>
+      <p className="text-xs text-foreground/60">
+        jalankan: <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">Ctrl</kbd>+<kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">Enter</kbd>
       </p>
     </div>
   );

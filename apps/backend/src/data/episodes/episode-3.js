@@ -1,4 +1,4 @@
-// Bab 3: Mengikuti Uang — Fokus: GROUP BY, HAVING, Aggregate.
+// Bab 3: Mengikuti Uang Fokus: GROUP BY, HAVING, Aggregate.
 // Aida, auditor internal, menemukan transaksi mencurigakan di ledger pabrik.
 // Motif: Victor Hale yang menemukan audit kontrak fiktif "maintenance mesin".
 export const episode3 = {
@@ -146,25 +146,25 @@ export const episode3 = {
     query:
       "SELECT vendor, COUNT(*) AS jumlah_transaksi FROM transactions WHERE trx_date BETWEEN '2025-01-01' AND '2025-01-31' GROUP BY vendor HAVING COUNT(*) > 30",
     comment:
-      'Kelompokkan per vendor untuk Januari 2025 (WHERE + BETWEEN), hitung jumlah transaksi (COUNT + GROUP BY), lalu batasi dengan HAVING COUNT(*) > 30. HAVING dipakai untuk memfilter hasil agregasi — WHERE tidak bisa.',
+      'Kelompokkan per vendor untuk Januari 2025 (WHERE + BETWEEN), hitung jumlah transaksi (COUNT + GROUP BY), lalu batasi dengan HAVING COUNT(*) > 30. HAVING dipakai untuk memfilter hasil agregasi, WHERE tidak bisa.',
     explanation:
-      'Januari 2025: PT Mandiri Teknik punya 30 transaksi persis (tidak lolos > 30). Berkah Kreatif punya 62 transaksi — dua kali per hari, mustahil untuk maintenance rutin. Vendor fiktif inilah tempat uang korban perusahaan mengalir.',
+      'Januari 2025: PT Mandiri Teknik punya 30 transaksi persis (tidak lolos > 30). Berkah Kreatif punya 62 transaksi, dua kali per hari, mustahil untuk maintenance rutin. Vendor fiktif inilah tempat uang perusahaan mengalir.',
   },
   culprit: {
     employee_code: 'P-1003',
     name: 'Irfan Maulana',
     tokens: ['P-1003', 'Irfan', 'Berkah Kreatif'],
     verdict:
-      'Berkah Kreatif adalah perusahaan fiktif yang didirikan atas nama kerabat Irfan Maulana. Ia mengalirkan uang perusahaan lewat kontrak maintenance palsu, dan Victor Hale — yang menemukan audit itu — harus dibungkam.',
+      'Berkah Kreatif adalah perusahaan fiktif yang didirikan atas nama kerabat Irfan Maulana. Ia mengalirkan uang perusahaan lewat kontrak maintenance palsu, dan Victor Hale yang menemukan audit itu harus dibungkam.',
   },
   hints: [
-    'Mulailah dengan menelusuri transaksi di bulan Januari 2025 — itulah bulan pembunuhan.',
+    'Mulailah dengan menelusuri transaksi di bulan Januari 2025, itulah bulan pembunuhan.',
     'Gunakan WHERE dengan BETWEEN untuk mempersempit ke Januari.',
     'Kelompokkan per vendor dengan GROUP BY, lalu hitung jumlahnya dengan COUNT(*).',
     'Gunakan HAVING untuk memfilter hasil agregasi. Vendor normal membayar maksimal 1 transaksi per hari.',
   ],
   redHerrings: [
-    'PT Mandiri Teknik — terlihat sering bertransaksi, tapi tepat 30 di Januari (normal 1/hari).',
-    'CV Jaya Abadi — nilai besar, tapi baru mulai Feb 2025, setelah kasus terbuka.',
+    'PT Mandiri Teknik terlihat sering bertransaksi, tapi tepat 30 di Januari (normal 1/hari).',
+    'CV Jaya Abadi nilai besar, tapi baru mulai Feb 2025, setelah kasus terbuka.',
   ],
 };

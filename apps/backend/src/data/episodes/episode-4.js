@@ -1,7 +1,7 @@
-// Bab 4: Skype Murahan — Fokus: Subqueries.
+// Bab 4: Skype Murahan Fokus: Subqueries.
 // Riwayat chat korban ditemukan dari file recovery. Pelaku menghapus sebagian
 // besar pesan, tapi log server menyimpan sebagian. Sender disembunyikan di
-// balik kode anonim (sender_id) — petakan ke karyawan lewat dispatch_log.
+// balik kode anonim (sender_id), petakan ke karyawan lewat dispatch_log.
 export const episode4 = {
   id: 4,
   title: 'Skype Murahan',
@@ -9,7 +9,7 @@ export const episode4 = {
   brief:
     'Tim forensik memulihkan sebagian riwayat chat internal pabrik. Sebagian besar pesan terhapus oleh penyerang, tapi server chat menyimpan log cadangan yang tidak bisa dihapus. Sender disembunyikan di balik kode anonim (sender_id) dan dipetakan lewat tabel dispatch_log.',
   goal:
-    'Temukan identitas pengguna yang mengirim pesan paling mengancam ke korban pada malam pembunuhan. Hubungkan sender_id dari pesan ancaman ke karyawan melalui dispatch_log — gunakan subquery.',
+    'Temukan identitas pengguna yang mengirim pesan paling mengancam ke korban pada malam pembunuhan. Hubungkan sender_id dari pesan ancaman ke karyawan melalui dispatch_log. Gunakan subquery.',
   tables: [
     {
       name: 'messages',
@@ -77,12 +77,12 @@ export const episode4 = {
   },
   hints: [
     'Baca isi pesan: mana yang benar-benar ancaman, bukan sekadar percakapan biasa?',
-    'sender_id yang sama muncul berulang dengan nada semakin agresif — ikuti dia.',
+    'sender_id yang sama muncul berulang dengan nada semakin agresif, ikuti dia.',
     'Gunakan JOIN ke dispatch_log untuk memetakan sender_id ke employee_code.',
     'Terakhir, hubungkan employee_code ke employees untuk mendapatkan nama.',
   ],
   redHerrings: [
-    'user_002 (Ratna) dan user_009 (Andi) — aktif mengomentari, tapi tidak pernah mengancam.',
-    'user_007 (Fajar) — menyebut gudang sepi, penting untuk alibi, tapi bukan pengirim ancaman.',
+    'user_002 (Ratna) dan user_009 (Andi) aktif mengomentari, tapi tidak pernah mengancam.',
+    'user_007 (Fajar) menyebut gudang sepi, penting untuk alibi, tapi bukan pengirim ancaman.',
   ],
 };

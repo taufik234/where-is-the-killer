@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, Check, Lock, RotateCcw, Sparkles } from 'lucide-react';
+import { BookOpen, Check, FileSearch, Lock, RotateCcw, Search } from 'lucide-react';
 import { api, type EpisodeDetail, type EpisodeSummary, type QueryResponse, type SolveResponse } from '@/lib/api';
 import SqlEditor from './SqlEditor';
 import ResultTable from './ResultTable';
@@ -38,7 +38,7 @@ const STATUS_LABEL = {
   locked: 'TERKUNCI',
 } as const;
 
-const EPISODE_ICONS = [BookOpen, Sparkles, Lock, Lock, Lock];
+const EPISODE_ICONS = [BookOpen, Search, Lock, Lock, Lock];
 
 export default function GameApp() {
   const [episodes, setEpisodes] = useState<EpisodeSummary[] | null>(null);
@@ -186,12 +186,12 @@ export default function GameApp() {
             <SidebarGroupLabel>Skor</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="px-3 py-1">
-                <div className="flex items-center justify-between font-mono text-xs">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Total</span>
-                  <span className="text-primary">{totalScore}</span>
+                  <span className="font-mono font-semibold text-primary">{totalScore}</span>
                 </div>
                 <Progress value={(solvedCount / totalCount) * 100} className="mt-2" />
-                <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                <p className="mt-1 font-mono text-[11px] text-foreground/60">
                   {solvedCount}/{totalCount} kasus
                 </p>
               </div>
@@ -210,9 +210,6 @@ export default function GameApp() {
       <SidebarInset>
         <header className="flex items-center gap-2 border-b px-4 py-2">
           <SidebarTrigger />
-          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            Kasus {episode ? String(episode.id).padStart(2, '0') : '--'}
-          </span>
         </header>
         <main className="flex-1 p-6">
           {error && !episode && (
@@ -232,11 +229,9 @@ export default function GameApp() {
                 goal={episode.goal}
               >
                 {episode.hints.length > 0 && (
-                  <div className="mt-2 border-t pt-4">
-                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Petunjuk
-                    </p>
-                    <ol className="mt-2 list-inside list-decimal space-y-1.5 text-sm text-foreground/80">
+                  <div className="mt-2 md:mt-0 md:border-l md:border-border/60 md:pl-6">
+                    <p className="text-sm font-semibold text-foreground">Petunjuk</p>
+                    <ol className="mt-2 list-inside list-decimal space-y-1.5 text-sm leading-relaxed text-foreground/80">
                       {episode.hints.map((h, i) => (
                         <li key={i}>{h}</li>
                       ))}
@@ -246,7 +241,7 @@ export default function GameApp() {
               </StoryPanel>
 
               <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-6 rounded-lg border bg-card px-6 py-5">
+                <div className="flex flex-col gap-6 rounded-md border border-primary/20 bg-background/90 px-5 py-5">
                   <SqlEditor value={sql} onChange={handleChange} onSubmit={runQuery} />
 
                   <div className="flex flex-wrap items-center gap-3">
@@ -255,10 +250,10 @@ export default function GameApp() {
                     </Button>
                   </div>
 
-                  <Card className="gap-3 border p-4 shadow-none">
+                  <Card className="gap-3 border border-primary/20 p-4 shadow-none">
                     <CardContent className="flex flex-col gap-2 p-0">
-                      <label htmlFor="answer-input" className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Tebak pelaku — tulis nama atau kode
+                      <label htmlFor="answer-input" className="text-sm font-semibold text-foreground">
+                        Tebak pelaku, tulis nama atau kode
                       </label>
                       <div className="flex flex-wrap items-center gap-2">
                         <Input
@@ -298,9 +293,9 @@ export default function GameApp() {
                   </Card>
                 )}
 
-                <ResultTable columns={query?.columns ?? []} rows={query?.rows ?? []} />
+                <ResultTable columns={query?.columns ?? []} rows={query?.rows ?? []} isLoading={status === 'loading'} />
                 {query?.truncated && (
-                  <p className="text-xs text-muted-foreground">Hasil dibatasi 500 baris — persempit query kamu.</p>
+                  <p className="text-xs text-amber-500/80">Hasil dibatasi 500 baris. Persempit query kamu.</p>
                 )}
               </div>
             </div>
@@ -314,7 +309,7 @@ export default function GameApp() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary">
-              <Sparkles /> Kasus terpecahkan
+              <FileSearch /> Kasus terpecahkan
             </DialogTitle>
             <DialogDescription>
               {solve?.message}

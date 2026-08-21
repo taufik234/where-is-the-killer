@@ -1,4 +1,4 @@
-// Bab 2: Jejak Digital — Fokus: JOIN, IN.
+// Bab 2: Jejak Digital Fokus: JOIN, IN.
 // Ponsel Victor ditemukan di loker (dibuang). Riwayat panggilan terakhir ada
 // di file call_log hasil recovery. Timeline tim forensik menetapkan: pelaku
 // menelepon korban MENIT sebelum pembunuhan. Hubungkan nomor ponsel karyawan
@@ -8,9 +8,9 @@ export const episode2 = {
   title: 'Jejak Digital',
   focus: 'JOIN, IN',
   brief:
-    'Tim forensik memulihkan ponsel Victor dari dalam loker pribadinya — aneh, ponsel tak pernah jauh dari pemiliknya. Penyidik menetapkan bahwa pelaku menelepon Victor sesaat sebelum pembunuhan untuk memancingnya lokasi. Hubungkan data karyawan (employees) dengan call_log yang dipulihkan.',
+    'Tim forensik memulihkan ponsel Victor dari dalam loker pribadinya, aneh karena ponsel tak pernah jauh dari pemiliknya. Penyidik menetapkan bahwa pelaku menelepon Victor sesaat sebelum pembunuhan untuk memancingnya ke lokasi. Hubungkan data karyawan (employees) dengan call_log yang dipulihkan.',
   goal:
-    'Cari tahu karyawan mana yang nomor ponselnya menelepon Victor Hale dalam 1 jam sebelum kematian (22:10 – 23:10). Gunakan JOIN atau IN.',
+    'Cari tahu karyawan mana yang nomor ponselnya menelepon Victor Hale dalam 1 jam sebelum kematian (22:10 sampai 23:10). Gunakan JOIN atau IN.',
   tables: [
     {
       name: 'employees',
@@ -63,9 +63,9 @@ export const episode2 = {
     query:
       'SELECT e.name FROM employees e JOIN call_log c ON c."from" = e.phone WHERE c.type = \'out\' AND c.time BETWEEN \'22:10\' AND \'23:10\' ORDER BY c.time LIMIT 10',
     comment:
-      'JOIN employees ke call_log pada nomor ponsel, filter panggilan keluar (out) pada rentang 22:10–23:10. Perhatikan 0812-1003 (Irfan) OUT 22:32 durasi 5 menit.',
+      'JOIN employees ke call_log pada nomor ponsel, filter panggilan keluar (out) pada rentang 22:10 sampai 23:10. Perhatikan 0812-1003 (Irfan) OUT 22:32 durasi 5 menit.',
     explanation:
-      'Nomor korban 0812-5000. Dari call_log, panggilan masuk/keluar yang melibatkan karyawan dalam jendela 22:10–23:10: Irfan Maulana (0812-1003) menelepon korban 22:32 selama 5 menit — panggilan bukan untuk dirinya sendiri, melainkan untuk memancing korban keluar.',
+      'Nomor korban 0812-5000. Dari call_log, panggilan masuk/keluar yang melibatkan karyawan dalam jendela 22:10 sampai 23:10: Irfan Maulana (0812-1003) menelepon korban 22:32 selama 5 menit. Panggilan bukan untuk dirinya sendiri, melainkan untuk memancing korban keluar.',
   },
   culprit: {
     employee_code: 'P-1003',
@@ -75,13 +75,13 @@ export const episode2 = {
       'Irfan menelepon Victor pada 22:32 (5 menit). Ia juga pegawai satu-satunya (dengan akses ke log gudang) yang memanipulasi pintu pada Bab 1.',
   },
   hints: [
-    'Telusuri call_log dan employees — perhatikan kolom mana yang cocok untuk digabung (JOIN).',
+    'Telusuri call_log dan employees, perhatikan kolom mana yang cocok untuk digabung (JOIN).',
     'Cek arah panggilan: kolom type (in/out) pada call_log. Pelaku MEMANGGIL korban, bukan sebaliknya.',
-    'Waktu kematian 23:10 — carilah panggilan dalam 1 jam sebelum itu.',
+    'Waktu kematian 23:10. Carilah panggilan dalam 1 jam sebelum itu.',
     'Satu panggilan OUT pada 22:32 berdurasi 5 menit: sangat panjang untuk panggilan biasa ke korban.',
   ],
   redHerrings: [
-    'P-1009 (Andi) menelepon 22:31 singkat — ternyata hanya menanyakan jam kerja, alibi jelas disaksikan tim IT.',
-    'P-1006 (Dewi) menelepon 23:00 — setelah pembunuhan, saat korban sudah dipulihkan ponselnya.',
+    'P-1009 (Andi) menelepon 22:31 singkat, ternyata hanya menanyakan jam kerja, alibi jelas disaksikan tim IT.',
+    'P-1006 (Dewi) menelepon 23:00, setelah pembunuhan, saat korban sudah dipulihkan ponselnya.',
   ],
 };
