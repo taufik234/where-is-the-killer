@@ -1,0 +1,87 @@
+// Bab 8: Aliran Kas — Fokus: GROUP BY, HAVING.
+export const episode8 = {
+  id: 8,
+  title: 'Aliran Kas',
+  focus: 'GROUP BY, HAVING',
+  brief:
+    'Rekening hantu sudah ketemu, sekarang ikuti uangnya. Audit menemukan puluhan transfer kecil ke vendor yang sama selama triwulan pertama 2025. Jumlah transfer yang tidak wajar ini menutupi jejak pengelapan 75 juta tadi. Temukan vendor yang menerima lebih dari 25 transfer di Q1.',
+  goal:
+    'Temukan vendor yang menerima LEBIH DARI 25 transfer antara 2025-01-01 dan 2025-03-31. Gunakan GROUP BY dan HAVING.',
+  tables: [
+    {
+      name: 'cash_transfers',
+      columns: [
+        { name: 'id' },
+        { name: 'transfer_date' },
+        { name: 'vendor' },
+        { name: 'amount' },
+      ],
+      rows: [
+        [1, '2025-01-05', 'PT Mandiri Teknik', 1500000],
+        [2, '2025-01-07', 'PT Mandiri Teknik', 1500000],
+        [3, '2025-01-09', 'PT Mandiri Teknik', 1500000],
+        [4, '2025-01-12', 'PT Mandiri Teknik', 1500000],
+        [5, '2025-01-15', 'PT Mandiri Teknik', 1500000],
+        [6, '2025-01-18', 'PT Mandiri Teknik', 1500000],
+        [7, '2025-01-20', 'PT Mandiri Teknik', 1500000],
+        [8, '2025-01-22', 'PT Mandiri Teknik', 1500000],
+        [9, '2025-01-25', 'PT Mandiri Teknik', 1500000],
+        [10, '2025-01-28', 'PT Mandiri Teknik', 1500000],
+        [11, '2025-02-02', 'PT Mandiri Teknik', 1500000],
+        [12, '2025-02-05', 'PT Mandiri Teknik', 1500000],
+        [13, '2025-02-08', 'PT Mandiri Teknik', 1500000],
+        [14, '2025-02-11', 'PT Mandiri Teknik', 1500000],
+        [15, '2025-02-14', 'PT Mandiri Teknik', 1500000],
+        [16, '2025-02-17', 'PT Mandiri Teknik', 1500000],
+        [17, '2025-02-20', 'PT Mandiri Teknik', 1500000],
+        [18, '2025-02-23', 'PT Mandiri Teknik', 1500000],
+        [19, '2025-02-26', 'PT Mandiri Teknik', 1500000],
+        [20, '2025-03-02', 'PT Mandiri Teknik', 1500000],
+        [21, '2025-03-05', 'PT Mandiri Teknik', 1500000],
+        [22, '2025-03-08', 'PT Mandiri Teknik', 1500000],
+        [23, '2025-03-11', 'PT Mandiri Teknik', 1500000],
+        [24, '2025-03-14', 'PT Mandiri Teknik', 1500000],
+        [25, '2025-03-17', 'PT Mandiri Teknik', 1500000],
+        [26, '2025-03-20', 'PT Mandiri Teknik', 1500000],
+        [27, '2025-03-23', 'PT Mandiri Teknik', 1500000],
+        [28, '2025-03-26', 'PT Mandiri Teknik', 1500000],
+        [29, '2025-03-28', 'PT Mandiri Teknik', 1500000],
+        [30, '2025-03-30', 'PT Mandiri Teknik', 1500000],
+        [31, '2025-01-10', 'CV Jaya Abadi', 8000000],
+        [32, '2025-01-18', 'CV Jaya Abadi', 8000000],
+        [33, '2025-02-10', 'CV Jaya Abadi', 8000000],
+        [34, '2025-02-18', 'CV Jaya Abadi', 8000000],
+        [35, '2025-03-10', 'CV Jaya Abadi', 8000000],
+        [36, '2025-03-18', 'CV Jaya Abadi', 8000000],
+        [37, '2025-01-12', 'Berkah Kreatif', 5000000],
+        [38, '2025-02-12', 'Berkah Kreatif', 5000000],
+        [39, '2025-03-12', 'Berkah Kreatif', 5000000],
+        [40, '2025-01-25', 'Berkah Kreatif', 5000000],
+      ],
+    },
+  ],
+  solution: {
+    query:
+      "SELECT vendor, COUNT(*) AS jumlah FROM cash_transfers WHERE transfer_date BETWEEN '2025-01-01' AND '2025-03-31' GROUP BY vendor HAVING COUNT(*) > 25",
+    comment: 'Filter Q1 dengan BETWEEN, kelompokkan per vendor, hitung COUNT, lalu HAVING >25.',
+    explanation:
+      'Q1 2025: PT Mandiri Teknik 30 transfer, Berkah Kreatif 4, CV Jaya Abadi 6. Hanya PT Mandiri Teknik yang lewat 25, pola pecahan kecil untuk samarkan 75 juta.',
+  },
+  culprit: {
+    employee_code: 'P-1010',
+    name: 'Maya Kusuma',
+    tokens: ['P-1010', 'Maya Kusuma', 'Maya', 'PT Mandiri Teknik'],
+    verdict:
+      'P-1010 (Maya Kusuma) sebagai sekretaris direksi memproses 30 transfer kecil ke PT Mandiri Teknik selama Q1. Ia yang memecah faktur ganda 75 juta jadi 30 cicilan agar tidak terdeteksi limit approval.',
+  },
+  hints: [
+    'Batasi ke Q1 2025 dengan WHERE transfer_date BETWEEN.',
+    'GROUP BY vendor dan COUNT(*).',
+    'HAVING COUNT(*) > 25 untuk saring hasil agregasi.',
+    'Vendor normal hanya 4 sampai 6 transfer per triwulan, yang janggal 30.',
+  ],
+  redHerrings: [
+    'Berkah Kreatif 4 transfer terlihat aktif tapi masih normal.',
+    'CV Jaya Abadi 6 transfer dengan nominal 8 juta, bukan pecahan kecil.',
+  ],
+};

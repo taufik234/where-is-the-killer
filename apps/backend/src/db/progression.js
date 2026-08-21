@@ -81,7 +81,7 @@ export function resetProgress() {
   const db = new Database(PROGRESSION_DB_PATH);
   try {
     db.exec('DELETE FROM progress');
-    const ids = [1, 2, 3, 4, 5];
+    const ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     const stmt = db.prepare('INSERT INTO progress (episode_id, status) VALUES (?, ?)');
     const tx = db.transaction((list) => {
       for (const id of list) {
