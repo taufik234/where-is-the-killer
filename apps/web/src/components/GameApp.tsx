@@ -10,6 +10,7 @@ import ResultTable from './ResultTable';
 import StoryPanel from './StoryPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -166,76 +167,102 @@ export default function GameApp() {
               <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
                 <p className="px-3 text-[10px] font-mono uppercase tracking-[0.2em] text-white/30 mb-2">Kasus Aktif</p>
                 
-                {episodes?.map((ep, i) => {
-                  const Icon = EPISODE_ICONS[i % EPISODE_ICONS.length];
-                  const isActive = episode?.id === ep.id;
-                  const isLocked = ep.status === 'locked';
-                  
-                  return (
-                    <motion.button
-                      key={ep.id}
-                      whileHover={!isLocked ? { scale: 1.02 } : {}}
-                      whileTap={!isLocked ? { scale: 0.98 } : {}}
-                      onClick={() => !isLocked && selectEpisode(ep.id)}
-                      disabled={isLocked}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden group ${
-                        isActive 
-                          ? 'bg-amber-500/10 border border-amber-500/20' 
-                          : isLocked 
-                            ? 'opacity-40 cursor-not-allowed' 
-                            : 'hover:bg-white/[0.03] border border-transparent hover:border-white/5'
-                      }`}
-                    >
-                      {isActive && (
-                        <motion.div 
-                          layoutId="active-indicator"
-                          className="absolute left-0 top-2 bottom-2 w-0.5 bg-amber-500 rounded-full" 
-                        />
-                      )}
-                      <div className="flex items-center gap-3">
-                        <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold ${
-                          isActive 
-                            ? 'bg-amber-500/20 text-amber-400' 
-                            : isLocked 
-                              ? 'bg-white/5 text-white/30' 
-                              : 'bg-white/5 text-white/50'
-                        }`}>
-                          {isLocked ? <Lock className="w-3 h-3" /> : <Icon className="w-3.5 h-3.5" />}
+                {!episodes ? (
+                  <div className="space-y-2 px-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/5 bg-white/[0.02]">
+                        <Skeleton className="w-7 h-7 rounded-md bg-white/10" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-3 w-3/4 bg-white/10" />
+                          <Skeleton className="h-2 w-1/2 bg-white/5" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${isActive ? 'text-amber-100' : 'text-white/70'}`}>
-                            {ep.title}
-                          </p>
-                          <p className={`text-[10px] font-mono mt-0.5 ${isActive ? 'text-amber-400/60' : 'text-white/30'}`}>
-                            {STATUS_LABEL[ep.status]}
-                          </p>
-                        </div>
-                        {ep.status === 'solved' && (
-                          <Check className="w-4 h-4 text-emerald-500" />
-                        )}
                       </div>
-                    </motion.button>
-                  );
-                })}
+                    ))}
+                  </div>
+                ) : (
+                  episodes.map((ep, i) => {
+                    const Icon = EPISODE_ICONS[i % EPISODE_ICONS.length];
+                    const isActive = episode?.id === ep.id;
+                    const isLocked = ep.status === 'locked';
+                    
+                    return (
+                      <motion.button
+                        key={ep.id}
+                        whileHover={!isLocked ? { scale: 1.02 } : {}}
+                        whileTap={!isLocked ? { scale: 0.98 } : {}}
+                        onClick={() => !isLocked && selectEpisode(ep.id)}
+                        disabled={isLocked}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden group ${
+                          isActive 
+                            ? 'bg-amber-500/10 border border-amber-500/20' 
+                            : isLocked 
+                              ? 'opacity-40 cursor-not-allowed' 
+                              : 'hover:bg-white/[0.03] border border-transparent hover:border-white/5'
+                        }`}
+                      >
+                        {isActive && (
+                          <motion.div 
+                            layoutId="active-indicator"
+                            className="absolute left-0 top-2 bottom-2 w-0.5 bg-amber-500 rounded-full" 
+                          />
+                        )}
+                        <div className="flex items-center gap-3">
+                          <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold ${
+                            isActive 
+                              ? 'bg-amber-500/20 text-amber-400' 
+                              : isLocked 
+                                ? 'bg-white/5 text-white/30' 
+                                : 'bg-white/5 text-white/50'
+                          }`}>
+                            {isLocked ? <Lock className="w-3 h-3" /> : <Icon className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${isActive ? 'text-amber-100' : 'text-white/70'}`}>
+                              {ep.title}
+                            </p>
+                            <p className={`text-[10px] font-mono mt-0.5 ${isActive ? 'text-amber-400/60' : 'text-white/30'}`}>
+                              {STATUS_LABEL[ep.status]}
+                            </p>
+                          </div>
+                          {ep.status === 'solved' && (
+                            <Check className="w-4 h-4 text-emerald-500" />
+                          )}
+                        </div>
+                      </motion.button>
+                    );
+                  })
+                )}
               </div>
 
               <div className="p-4 border-t border-white/5">
                 <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">Progress</span>
-                    <span className="text-xs font-mono text-amber-400">{solvedCount}/{totalCount}</span>
+                    {!episodes ? (
+                      <Skeleton className="h-3 w-8 bg-white/10" />
+                    ) : (
+                      <span className="text-xs font-mono text-amber-400">{solvedCount}/{totalCount}</span>
+                    )}
                   </div>
                   <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(solvedCount / totalCount) * 100}%` }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                      className="h-full bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.3)]" 
-                    />
+                    {!episodes ? (
+                      <Skeleton className="h-full w-full bg-white/5" />
+                    ) : (
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(solvedCount / totalCount) * 100}%` }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="h-full bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.3)]" 
+                      />
+                    )}
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-[10px] text-white/30 font-mono uppercase tracking-wider">Total Skor</span>
-                    <span className="text-lg font-mono font-bold text-amber-400">{totalScore}</span>
+                    {!episodes ? (
+                      <Skeleton className="h-5 w-12 bg-white/10" />
+                    ) : (
+                      <span className="text-lg font-mono font-bold text-amber-400">{totalScore}</span>
+                    )}
                   </div>
                 </div>
                 
@@ -460,15 +487,52 @@ export default function GameApp() {
                   </div>
                 </motion.div>
               ) : (
-                <div className="flex items-center justify-center h-64">
-                  <motion.div 
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="flex items-center gap-3 text-white/30"
-                  >
-                    <Database className="w-5 h-5 animate-pulse" />
-                    <span className="text-sm font-mono">Memuat kasus...</span>
-                  </motion.div>
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 space-y-4">
+                    <div className="flex gap-2">
+                      <Skeleton className="h-5 w-24 bg-white/10" />
+                      <Skeleton className="h-5 w-20 bg-white/5" />
+                    </div>
+                    <Skeleton className="h-6 w-3/4 bg-white/10" />
+                    <div className="grid md:grid-cols-2 gap-6 pt-2">
+                      <div className="space-y-3">
+                        <Skeleton className="h-3 w-full bg-white/5" />
+                        <Skeleton className="h-3 w-full bg-white/5" />
+                        <Skeleton className="h-3 w-5/6 bg-white/5" />
+                        <Skeleton className="h-20 w-full bg-white/[0.02] border border-white/5" />
+                      </div>
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-1/3 bg-white/10" />
+                        <Skeleton className="h-3 w-full bg-white/5" />
+                        <Skeleton className="h-3 w-full bg-white/5" />
+                        <Skeleton className="h-3 w-4/5 bg-white/5" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl overflow-hidden border border-white/5 bg-[#0c0c12]">
+                    <div className="px-4 py-2.5 bg-white/[0.02] border-b border-white/5 flex items-center gap-3">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                      </div>
+                      <Skeleton className="h-3 w-20 bg-white/10 ml-2" />
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <Skeleton className="h-3 w-full bg-white/5" />
+                      <Skeleton className="h-3 w-5/6 bg-white/5" />
+                      <Skeleton className="h-3 w-4/6 bg-white/5" />
+                    </div>
+                    <div className="px-4 py-2.5 bg-white/[0.02] border-t border-white/5 flex justify-between items-center">
+                      <Skeleton className="h-3 w-24 bg-white/5" />
+                      <Skeleton className="h-7 w-24 bg-amber-500/20 rounded-lg" />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-8 flex flex-col items-center gap-3">
+                    <Skeleton className="w-8 h-8 rounded-full bg-white/5" />
+                    <Skeleton className="h-3 w-40 bg-white/5" />
+                    <Skeleton className="h-2 w-56 bg-white/5" />
+                  </div>
                 </div>
               )}
             </AnimatePresence>
