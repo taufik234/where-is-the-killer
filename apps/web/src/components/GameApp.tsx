@@ -49,6 +49,7 @@ export default function GameApp() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [lastSolve, setLastSolve] = useState<SolveResponse | null>(null);
   const { items: historyItems, push: pushHistory, clear: clearHistory } = useHistory(episode?.seasonId ?? 1, episode?.id ?? null);
 
   const loadEpisode = useCallback(async (id: number) => {
@@ -116,6 +117,7 @@ export default function GameApp() {
     try {
       const res = await api.solve(episode.id, answer);
       setSolve(res);
+      setLastSolve(res);
       setStatus(res.correct ? 'success' : 'error');
       if (res.correct) {
         setVerdictDialogOpen(true);
@@ -123,9 +125,11 @@ export default function GameApp() {
         setEpisodes(list);
         const seasonsList = await api.seasons();
         setSeasons(seasonsList);
-        const active = list.find((e) => e.status === 'available');
-        if (active && active.id !== episode.id) {
-          await loadEpisode(active.id);
+        // Reload episode saat ini agar status jadi solved dan solusi tampil, jangan auto-pindah ke bab berikutnya
+        const updated = await api.episode(episode.id);
+        setEpisode(updated);
+        if (updated.status === 'solved' && updated.solution) {
+          api.execute(episode.id, updated.solution.query).then(setQuery).catch(() => {});
         }
       }
     } catch (err) {
@@ -647,34 +651,34 @@ export default function GameApp() {
               Kasus Terpecahkan
             </DialogTitle>
             <DialogDescription className="text-white/60 leading-relaxed">
-              {solve?.message}
+              {lastSolve?.message ?? solve?.message}
             </DialogDescription>
           </DialogHeader>
           
-          {solve?.score !== undefined && (
+          {(lastSolve?.score ?? solve?.score) !== undefined && (
             <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-[10px] font-mono text-white/30 uppercase tracking-wider mb-1">Query</p>
                   <p className="text-lg font-mono font-bold text-amber-400">
-                    {String(solve.breakdown?.queryCount ?? 0).padStart(2, '0')}
+                    {String((lastSolve ?? solve)?.breakdown?.queryCount ?? 0).padStart(2, '0')}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-mono text-white/30 uppercase tracking-wider mb-1">Salah</p>
                   <p className="text-lg font-mono font-bold text-red-400">
-                    {String(solve.breakdown?.wrongAttempts ?? 0).padStart(2, '0')}
+                    {String((lastSolve ?? solve)?.breakdown?.wrongAttempts ?? 0).padStart(2, '0')}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-mono text-white/30 uppercase tracking-wider mb-1">Skor</p>
-                  <p className="text-lg font-mono font-bold text-emerald-400">{solve.score}</p>
+                  <p className="text-lg font-mono font-bold text-emerald-400">{(lastSolve ?? solve)?.score}</p>
                 </div>
               </div>
             </div>
           )}
           
-          {solve?.verdict && (
+          {(lastSolve?.verdict ?? solve?.verdict) && (
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -682,7 +686,7 @@ export default function GameApp() {
               className="border-t border-white/5 pt-4 text-sm leading-relaxed text-white/60 italic"
               style={{ fontFamily: 'Georgia, serif' }}
             >
-              "{solve.verdict}"
+              "{(lastSolve ?? solve)?.verdict}"
             </motion.p>
           )}
         </DialogContent>
