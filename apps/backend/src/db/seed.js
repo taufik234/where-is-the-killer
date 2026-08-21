@@ -41,17 +41,18 @@ console.log(`integrity_check: ${integrity}`);
 
 db.close();
 
-// Reset player progression so a fresh seed starts the game over.
+// Reset player progression — lock dimatikan untuk review, semua episode jadi available.
 ensureProgressionDb();
 const pdb = openProgressionDb();
 pdb.exec('DELETE FROM progress');
 const defsById = new Map(defs.map((d) => [d.id, d]));
+const DISABLE_LOCK = process.env.DISABLE_LOCK !== 'false'; // default true untuk review
 for (let i = 0; i < defs.length; i++) {
   const def = defs[i];
-  const status = i === 0 ? 'available' : 'locked';
+  const status = DISABLE_LOCK ? 'available' : (i === 0 ? 'available' : 'locked');
   pdb.prepare(
     'INSERT INTO progress (episode_id, status) VALUES (?, ?)'
   ).run(def.id, status);
 }
-console.log('Progression reset: episode 1 available, rest locked.');
+console.log(DISABLE_LOCK ? 'Progression reset: semua episode available (lock dimatikan).' : 'Progression reset: episode 1 available, rest locked.');
 pdb.close();

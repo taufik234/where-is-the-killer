@@ -82,10 +82,11 @@ export function resetProgress() {
   try {
     db.exec('DELETE FROM progress');
     const ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const DISABLE_LOCK = process.env.DISABLE_LOCK !== 'false';
     const stmt = db.prepare('INSERT INTO progress (episode_id, status) VALUES (?, ?)');
     const tx = db.transaction((list) => {
       for (const id of list) {
-        const status = id === 1 ? 'available' : 'locked';
+        const status = DISABLE_LOCK ? 'available' : (id === 1 ? 'available' : 'locked');
         stmt.run(id, status);
       }
     });
