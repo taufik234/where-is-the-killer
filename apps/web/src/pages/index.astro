@@ -1,5 +1,5 @@
 ---
-// Landing page Query Noir - standalone tanpa Layout agar palet dan efek CRT tidak bentrok dengan game
+import '../styles/global.css';
 ---
 <!doctype html>
 <html lang="id" class="scroll-smooth">
@@ -8,70 +8,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Query Noir - Pecahkan kejahatan dengan query SQL. Interogasi database bukti, tulis SQL sungguhan di SQLite, temukan pelaku." />
   <title>Query Noir - Forensic Database Investigation</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            mono: ['JetBrains Mono', 'monospace'],
-            display: ['Space Grotesk', 'sans-serif'],
-          },
-          colors: {
-            noir: {
-              950: '#030305',
-              900: '#0a0a0f',
-              800: '#13131f',
-              700: '#1c1c2e',
-              600: '#252540',
-            },
-            toxic: {
-              400: '#00ff88',
-              500: '#00cc6a',
-              glow: 'rgba(0,255,136,0.15)',
-            },
-            alert: {
-              400: '#ff3366',
-              glow: 'rgba(255,51,102,0.2)',
-            }
-          },
-          animation: {
-            'blink': 'blink 1s step-end infinite',
-            'scan': 'scan 8s linear infinite',
-            'flicker': 'flicker 4s infinite',
-            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'float': 'float 6s ease-in-out infinite',
-          },
-          keyframes: {
-            blink: {
-              '0%, 100%': { opacity: '1' },
-              '50%': { opacity: '0' },
-            },
-            scan: {
-              '0%': { transform: 'translateY(-100%)' },
-              '100%': { transform: 'translateY(100vh)' },
-            },
-            flicker: {
-              '0%, 100%': { opacity: '1' },
-              '50%': { opacity: '0.95' },
-              '52%': { opacity: '0.5' },
-              '54%': { opacity: '0.95' },
-              '90%': { opacity: '1' },
-              '92%': { opacity: '0.8' },
-              '94%': { opacity: '1' },
-            },
-            float: {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-20px)' },
-            }
-          }
-        }
-      }
-    }
-  </script>
   <style>
     :root {
       --toxic: #00ff88;
@@ -196,6 +135,15 @@
     }
     .btn-ripple:active::after { transform: scale(2); opacity: 1; transition: 0s; }
     .data-stream { font-size: 10px; line-height: 1.4; color: rgba(0,255,136,0.08); user-select: none; pointer-events: none; }
+    @keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: 0 } }
+    @keyframes scan { 0% { transform: translateY(-100%) } 100% { transform: translateY(100vh) } }
+    @keyframes flicker { 0%,100% { opacity:1 } 50%{opacity:0.95} 52%{opacity:0.5} 54%{opacity:0.95} 90%{opacity:1} 92%{opacity:0.8} 94%{opacity:1} }
+    @keyframes float { 0%,100%{ transform:translateY(0px)} 50%{ transform:translateY(-20px)} }
+    .animate-blink { animation: blink 1s step-end infinite }
+    .animate-scan { animation: scan 8s linear infinite }
+    .animate-float { animation: float 6s ease-in-out infinite }
+    .animate-pulse-slow { animation: pulse 4s cubic-bezier(0.4,0,0.6,1) infinite }
+    .animate-flicker { animation: flicker 4s infinite }
   </style>
 </head>
 <body class="crt hex-bg">

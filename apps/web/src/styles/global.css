@@ -41,6 +41,7 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "Fira Code",
     Menlo, Consolas, monospace;
+  --font-display: "Space Grotesk", sans-serif;
 
   /* Terminal noir: satu aksen hijau terminal, status hijau tua. Deep near-black. */
   --color-ink: #f8fafc;
@@ -50,6 +51,16 @@
   --color-accent: #22c55e;
   --color-accent-strong: #16a34a;
   --color-warn: #fbbf24;
+
+  /* Landing palette - Query Noir marketing */
+  --color-noir-950: #030305;
+  --color-noir-900: #0a0a0f;
+  --color-noir-800: #13131f;
+  --color-noir-700: #1c1c2e;
+  --color-noir-600: #252540;
+  --color-toxic-400: #00ff88;
+  --color-toxic-500: #00cc6a;
+  --color-alert-400: #ff3366;
 }
 
 :root {
