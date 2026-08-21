@@ -4,10 +4,11 @@ import {
   Search, Zap, Database, ChevronRight, Terminal,
   Trophy, Activity
 } from 'lucide-react';
-import { api, type EpisodeDetail, type EpisodeSummary, type QueryResponse, type SolveResponse } from '@/lib/api';
+import { api, type EpisodeDetail, type EpisodeSummary, type QueryResponse, type SolveResponse, type SeasonSummary } from '@/lib/api';
 import SqlEditor from './SqlEditor';
 import ResultTable from './ResultTable';
 import StoryPanel from './StoryPanel';
+import SeasonList from './SeasonList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +16,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useHistory } from '@/hooks/useHistory';
+import { format } from 'sql-formatter';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -34,6 +37,7 @@ const EPISODE_ICONS = [BookOpen, Search, Lock, Lock, Lock];
 
 export default function GameApp() {
   const [episodes, setEpisodes] = useState<EpisodeSummary[] | null>(null);
+  const [seasons, setSeasons] = useState<SeasonSummary[] | null>(null);
   const [episode, setEpisode] = useState<EpisodeDetail | null>(null);
   const [sql, setSql] = useState<string>('');
   const [answer, setAnswer] = useState<string>('');
@@ -42,7 +46,10 @@ export default function GameApp() {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [verdictDialogOpen, setVerdictDialogOpen] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { items: historyItems, push: pushHistory, clear: clearHistory } = useHistory(episode?.seasonId ?? 1, episode?.id ?? null);
 
   const loadEpisode = useCallback(async (id: number) => {
     const detail = await api.episode(id);
@@ -70,6 +77,7 @@ export default function GameApp() {
         }
       })
       .catch((err) => setError(String(err)));
+    api.seasons().then(setSeasons).catch(() => {});
   }, []);
 
   const selectEpisode = async (id: number) => {
@@ -93,6 +101,7 @@ export default function GameApp() {
       } else {
         setStatus('success');
         setQuery(res);
+        pushHistory(sql);
       }
     } catch (err) {
       setStatus('error');
@@ -112,6 +121,8 @@ export default function GameApp() {
         setVerdictDialogOpen(true);
         const list = await api.episodes();
         setEpisodes(list);
+        const seasonsList = await api.seasons();
+        setSeasons(seasonsList);
         const active = list.find((e) => e.status === 'available');
         if (active && active.id !== episode.id) {
           await loadEpisode(active.id);
@@ -126,6 +137,51 @@ export default function GameApp() {
   const handleChange = (value: string) => {
     setSql(value);
     setSolve(null);
+  };
+
+  const handleReset = async () => {
+    setResetLoading(true);
+    try {
+      await api.resetProgress();
+      const list = await api.episodes();
+      setEpisodes(list);
+      const seasonsList = await api.seasons();
+      setSeasons(seasonsList);
+      const active = list.find((e) => e.status === 'available') ?? list[0];
+      if (active) await loadEpisode(active.id);
+      setResetDialogOpen(false);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleFormat = () => {
+    try {
+      const formatted = format(sql, { language: 'sqlite', keywordCase: 'upper' });
+      setSql(formatted);
+    } catch {
+      setError('Format gagal, cek syntax');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const handleExport = () => {
+    if (!query || query.rows.length === 0) {
+      setError('Tidak ada hasil untuk diexport');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    const cols = query.columns;
+    const csv = [cols.join(','), ...query.rows.map((r) => cols.map((c) => `"${String(r[c] ?? '').replaceAll('"', '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `query-noir-${episode?.id ?? 'export'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const totalScore = episodes?.reduce((acc, e) => acc + (e.best_score ?? 0), 0) ?? 0;
@@ -274,6 +330,15 @@ export default function GameApp() {
                 >
                   <RotateCcw className="w-3.5 h-3.5 mr-2" /> Mulai Ulang
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2 border-red-500/20 bg-transparent hover:bg-red-500/10 text-white/40 hover:text-red-400 transition-all"
+                  onClick={() => setResetDialogOpen(true)}
+                  disabled={resetLoading || !episodes || solvedCount === 0}
+                >
+                  Reset Progres
+                </Button>
               </div>
             </motion.aside>
           )}
@@ -307,6 +372,7 @@ export default function GameApp() {
           </header>
 
           <div className="max-w-5xl mx-auto p-6 space-y-6">
+            <SeasonList seasons={seasons} activeEpisodeId={episode?.id ?? null} onSelectEpisode={selectEpisode} />
             <AnimatePresence mode="wait">
               {error && !episode && (
                 <motion.div
@@ -377,15 +443,23 @@ export default function GameApp() {
                         <Terminal className="w-3.5 h-3.5 text-white/20" />
                       </div>
                       
-                      <SqlEditor value={sql} onChange={handleChange} onSubmit={runQuery} />
+                      <SqlEditor value={sql} onChange={handleChange} onSubmit={runQuery} tables={episode?.tables ?? []} />
                       
-                      <div className="px-4 py-2.5 bg-white/[0.02] border-t border-white/5 flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-white/30">
+                      <div className="px-4 py-2.5 bg-white/[0.02] border-t border-white/5 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-mono text-white/30 hidden md:inline">
                           <kbd className="px-1.5 py-0.5 rounded bg-white/5 text-white/50">Ctrl</kbd>
                           {' + '}
                           <kbd className="px-1.5 py-0.5 rounded bg-white/5 text-white/50">Enter</kbd>
                           {' untuk eksekusi'}
                         </span>
+                        <div className="flex items-center gap-1.5">
+                          <Button variant="ghost" size="sm" onClick={handleFormat} disabled={!sql.trim()} className="h-7 px-2.5 text-[11px] text-white/40 hover:text-white hover:bg-white/5">
+                            Format
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={handleExport} disabled={!query || query.rows.length === 0} className="h-7 px-2.5 text-[11px] text-white/40 hover:text-white hover:bg-white/5">
+                            Export CSV
+                          </Button>
+                        </div>
                         <Button
                           onClick={runQuery}
                           disabled={status === 'loading' || !sql.trim()}
@@ -405,6 +479,29 @@ export default function GameApp() {
                         </Button>
                       </div>
                     </div>
+
+                    {historyItems.length > 0 && (
+                      <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-white/40 flex items-center gap-1.5">
+                            <Activity className="w-3 h-3" /> Riwayat Query
+                          </span>
+                          <button onClick={clearHistory} className="text-[11px] text-white/30 hover:text-amber-400 transition-colors">Hapus</button>
+                        </div>
+                        <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                          {historyItems.map((q, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setSql(q)}
+                              className="w-full text-left px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 text-xs font-mono text-white/60 hover:text-white/90 truncate transition-colors"
+                              title={q}
+                            >
+                              {q.slice(0, 80)}{q.length > 80 ? '...' : ''}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <motion.div 
                       className="rounded-xl border border-white/5 bg-white/[0.02] p-5"
@@ -588,6 +685,25 @@ export default function GameApp() {
               "{solve.verdict}"
             </motion.p>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="bg-[#0f0f14] border-white/10 text-[#e8e4dc] max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-red-400">Yakin reset semua progres?</DialogTitle>
+            <DialogDescription className="text-white/60">
+              Semua episode akan kembali terkunci kecuali Bab 1, dan skor akan jadi 0. Tidak dapat dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" className="border-white/10 bg-transparent" onClick={() => setResetDialogOpen(false)} disabled={resetLoading}>
+              Batal
+            </Button>
+            <Button className="bg-red-500 hover:bg-red-400 text-white" onClick={handleReset} disabled={resetLoading}>
+              {resetLoading ? 'Mereset...' : 'Reset Progres'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

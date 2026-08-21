@@ -48,6 +48,54 @@ export function ensureProgressionDb() {
   return PROGRESSION_DB_PATH;
 }
 
+export function ensureSeasonProgress() {
+  // Season tidak butuh kolom baru, hanya view logika. Guard idempoten agar aman dipanggil dua kali.
+  try {
+    const db = new Database(PROGRESSION_DB_PATH);
+    // Pastikan tabel progress ada sebelum buat helper
+    const exists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='progress'").get();
+    db.close();
+    return !!exists;
+  } catch {
+    return false;
+  }
+}
+
+export function getSeasonSummary(seasons) {
+  const db = new Database(PROGRESSION_DB_PATH);
+  try {
+    const rows = db.prepare('SELECT episode_id, status FROM progress').all();
+    const statusMap = new Map(rows.map((r) => [r.episode_id, r.status]));
+    return seasons.map((s) => {
+      const total = s.episodeIds.length;
+      const solved = s.episodeIds.filter((id) => statusMap.get(id) === 'solved').length;
+      const available = s.episodeIds.filter((id) => statusMap.get(id) === 'available').length;
+      return { ...s, episodeCount: total, solvedCount: solved, availableCount: available };
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export function resetProgress() {
+  const db = new Database(PROGRESSION_DB_PATH);
+  try {
+    db.exec('DELETE FROM progress');
+    const ids = [1, 2, 3, 4, 5];
+    const stmt = db.prepare('INSERT INTO progress (episode_id, status) VALUES (?, ?)');
+    const tx = db.transaction((list) => {
+      for (const id of list) {
+        const status = id === 1 ? 'available' : 'locked';
+        stmt.run(id, status);
+      }
+    });
+    tx(ids);
+    return true;
+  } finally {
+    db.close();
+  }
+}
+
 export function openProgressionDb() {
   return new Database(PROGRESSION_DB_PATH);
 }

@@ -6,7 +6,9 @@ import { episodeRouter } from './routes/episodes.js';
 import { executeRouter } from './routes/execute.js';
 import { solveRouter } from './routes/solve.js';
 import { hintRouter } from './routes/hints.js';
-import { ensureProgressionDb } from './db/progression.js';
+import { seasonRouter } from './routes/seasons.js';
+import { progressRouter } from './routes/progress.js';
+import { ensureProgressionDb, ensureSeasonProgress } from './db/progression.js';
 import { getEpisodeDefs } from './data/episodes/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +20,7 @@ const PORT = process.env.PORT || 8787;
 
 // Ensure progression DB + default row exist before accepting requests.
 ensureProgressionDb();
+ensureSeasonProgress();
 const episodeDefs = getEpisodeDefs();
 
 const app = express();
@@ -29,6 +32,8 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/episodes', episodeRouter);
+app.use('/api/seasons', seasonRouter);
+app.use('/api/progress', progressRouter);
 app.use('/api/execute', executeRouter);
 app.use('/api/solve', solveRouter);
 app.use('/api/hints', hintRouter);

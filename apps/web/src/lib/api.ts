@@ -16,9 +16,29 @@ export interface EpisodeDetail {
   brief: string;
   goal: string;
   status: 'locked' | 'available' | 'solved';
+  seasonId?: number;
   hints: string[];
   tables: { name: string; columns: string[] }[];
   solution?: { query: string; explanation: string };
+}
+
+export interface SeasonSummary {
+  id: number;
+  title: string;
+  episodeIds: number[];
+  episodeCount: number;
+  solvedCount: number;
+  availableCount: number;
+  episodes: EpisodeSummary[];
+}
+
+export interface SeasonDetail {
+  id: number;
+  title: string;
+  episodeIds: number[];
+  episodeCount: number;
+  solvedCount: number;
+  episodes: (EpisodeSummary & { brief: string; goal: string; tables: string[] })[];
 }
 
 export interface QueryResponse {
@@ -73,5 +93,16 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ answer }),
     })).json() as Promise<SolveResponse>;
+  },
+  async seasons(): Promise<SeasonSummary[]> {
+    const res = await fetch(`${API_URL}/api/seasons`);
+    const body = (await res.json()) as { seasons: SeasonSummary[] };
+    return body.seasons;
+  },
+  async season(id: number): Promise<SeasonDetail> {
+    return (await fetch(`${API_URL}/api/seasons/${id}`)).json() as Promise<SeasonDetail>;
+  },
+  async resetProgress(): Promise<{ ok: boolean; message: string }> {
+    return (await fetch(`${API_URL}/api/progress/reset`, { method: 'POST' })).json() as Promise<{ ok: boolean; message: string }>;
   },
 };
