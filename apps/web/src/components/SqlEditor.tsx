@@ -17,12 +17,16 @@ interface SqlEditorProps {
 
 const amberTheme = EditorView.theme({
   '&': { backgroundColor: '#0c0c12', color: '#e8e4dc' },
-  '.cm-content': { caretColor: '#f59e0b', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px', padding: '12px 0' },
-  '.cm-gutters': { backgroundColor: '#0c0c12', color: '#ffffff1a', borderRight: '1px solid rgba(255,255,255,0.05)' },
+  '.cm-editor': { backgroundColor: '#0c0c12' },
+  '.cm-scroller': { backgroundColor: '#0c0c12' },
+  '.cm-content': { backgroundColor: '#0c0c12', caretColor: '#f59e0b', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px', padding: '12px 0' },
+  '.cm-gutters': { backgroundColor: '#0c0c12', color: 'rgba(255,255,255,0.15)', borderRight: '1px solid rgba(255,255,255,0.05)' },
   '.cm-activeLineGutter': { backgroundColor: 'rgba(245,158,11,0.08)' },
   '.cm-activeLine': { backgroundColor: 'rgba(245,158,11,0.04)' },
   '.cm-cursor': { borderLeftColor: '#f59e0b' },
   '.cm-selectionBackground, ::selection': { backgroundColor: 'rgba(245,158,11,0.2)' },
+  '.cm-placeholder': { color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' },
+  '&.cm-focused': { outline: 'none' },
 });
 
 function tableCompletionSource(tables: { name: string; columns: string[] }[]) {
